@@ -9,14 +9,24 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.ankiflowai"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.yourcompany.ankiflowai",
+      "permissions": [
+        "com.ichi2.anki.permission.READ_WRITE_DATABASE"
+      ],
+      "intentFilters": [
+        {
+          "action": "com.ichi2.anki.api.READ_WRITE"
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +47,7 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "requiresCustomBuild": true
   }
 }

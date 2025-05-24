@@ -2,10 +2,13 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "skipLibCheck": true,  // Add this to temporarily bypass library type checks
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"  // Add your custom types folder
+    ],
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
   },
   "include": [
