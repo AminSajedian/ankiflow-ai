@@ -1,9 +1,10 @@
 // providers/AnkiProvider.tsx
+import axios from "axios";
 import { createContext, useContext } from "react";
-import { Platform } from 'react-native';
-import AnkiDroid from 'react-native-ankidroid';
+import { Platform } from "react-native";
 
-const isAndroid = Platform.OS === 'android';
+const isAndroid = Platform.OS === "android";
+const ANKICONNECT_URL = "http://localhost:8765"; // or use your device's IP if needed
 
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
@@ -25,135 +26,89 @@ export function useAnkiContext() {
 
 const warnNotAvailable = (fn: string) => {
   if (!isAndroid) {
-    console.warn(`AnkiDroid integration only works on Android. '${fn}' will return fallback value.`);
+    console.warn(
+      `AnkiConnect integration only works on Android. '${fn}' will return fallback value.`
+    );
     return;
   }
-  AnkiDroid.isApiAvailable().then((installed: boolean) => {
-    if (!installed) {
-      console.warn(`AnkiDroid app is not installed. '${fn}' will return fallback value.`);
-    } else {
-      console.warn(`AnkiDroid ContentProvider not available or permission not granted. '${fn}' will return fallback value.`);
-    }
-  });
+  console.warn(
+    `AnkiConnect API not available or not running. '${fn}' will return fallback value.`
+  );
 };
 
-async function ensurePermission(): Promise<boolean> {
-  if (!isAndroid) return false;
+async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
   try {
-    const hasPermission = await AnkiDroid.checkPermission();
-    if (hasPermission) return true;
-    const [err, result] = await AnkiDroid.requestPermission();
-    if (err) {
-      console.warn("AnkiDroid: Permission request error", err);
-      return false;
+    const res = await axios.post(ANKICONNECT_URL, {
+      action,
+      version: 6,
+      params,
+    });
+    if (res.data.error) {
+      console.warn(`AnkiConnect error: ${res.data.error}`);
+      return undefined;
     }
-    return result === 'granted';
-  } catch (e) {
-    console.warn("AnkiDroid: Permission check/request failed", e);
-    return false;
+    return res.data.result;
+  } catch (e: any) {
+    console.warn("AnkiConnect HTTP error:", e && typeof e === "object" && "message" in e ? (e as any).message : e);
+    return undefined;
   }
-}
-
-function hasMessage(obj: any): obj is { message: string } {
-  return obj && typeof obj === 'object' && typeof obj.message === 'string';
 }
 
 export function AnkiProvider({ children }: { children: React.ReactNode }) {
   const value: AnkiContextValue = {
     getDecks: async () => {
       if (!isAndroid) {
-        warnNotAvailable('getDecks');
+        warnNotAvailable("getDecks");
         return [];
       }
-      let [error, decks] = await AnkiDroid.getDeckList();
-      if (error && error.message === 'PERMISSION_DENIED_BY_USER') {
-        const granted = await ensurePermission();
-        if (granted) {
-          [error, decks] = await AnkiDroid.getDeckList();
-        }
-      }
-      if (error || !decks) {
-        console.warn("AnkiDroid: getDeckList error", error);
-        return [];
-      }
-      return decks.map(d => d.name);
+      const result = await ankiRequest<string[]>("deckNames");
+      return result || [];
     },
     getNotes: async (deck) => {
       if (!isAndroid) {
-        warnNotAvailable('getNotes');
+        warnNotAvailable("getNotes");
         return [];
       }
-      if (typeof (AnkiDroid as any).getNotes === 'function') {
-        try {
-          let notes = await (AnkiDroid as any).getNotes(`deck:"${deck}"`);
-          // If permission denied, try to request and retry once
-          if (hasMessage(notes) && notes.message === 'PERMISSION_DENIED_BY_USER') {
-            const granted = await ensurePermission();
-            if (granted) {
-              notes = await (AnkiDroid as any).getNotes(`deck:"${deck}"`);
-            }
-          }
-          return notes || [];
-        } catch (e) {
-          console.error("Failed to get notes:", e);
-          return [];
-        }
-      } else {
-        warnNotAvailable('getNotes');
-        return [];
-      }
+      // Find notes in the deck using a search query
+      const result = await ankiRequest<number[]>("findNotes", {
+        query: `deck:"${deck}"`,
+      });
+      return result || [];
     },
     updateNote: async (noteId, fields) => {
       if (!isAndroid) {
-        warnNotAvailable('updateNote');
+        warnNotAvailable("updateNote");
         return;
       }
-      if (typeof (AnkiDroid as any).updateNote === 'function') {
-        try {
-          await (AnkiDroid as any).updateNote(noteId, fields);
-        } catch (e) {
-          if (hasMessage(e) && e.message === 'PERMISSION_DENIED_BY_USER') {
-            const granted = await ensurePermission();
-            if (granted) {
-              try {
-                await (AnkiDroid as any).updateNote(noteId, fields);
-              } catch (err) {
-                console.error("Failed to update note after permission:", err);
-              }
-            }
-          } else {
-            console.error("Failed to update note:", e);
-          }
-        }
-      } else {
-        warnNotAvailable('updateNote');
-      }
+      await ankiRequest("updateNoteFields", {
+        note: {
+          id: noteId,
+          fields,
+        },
+      });
     },
     getNoteFields: async (noteId) => {
       if (!isAndroid) {
-        warnNotAvailable('getNoteFields');
+        warnNotAvailable("getNoteFields");
         return {};
       }
-      if (typeof (AnkiDroid as any).getNoteFields === 'function') {
-        try {
-          let fields = await (AnkiDroid as any).getNoteFields(noteId);
-          if (hasMessage(fields) && fields.message === 'PERMISSION_DENIED_BY_USER') {
-            const granted = await ensurePermission();
-            if (granted) {
-              fields = await (AnkiDroid as any).getNoteFields(noteId);
-            }
-          }
-          return fields || {};
-        } catch (e) {
-          console.error("Failed to get note fields:", e);
-          return {};
+      // Get note info and extract fields
+      const result = await ankiRequest<any[]>("notesInfo", {
+        notes: [noteId],
+      });
+      if (result && result.length > 0 && result[0].fields) {
+        // result[0].fields is an object: { FieldName: { value: string, order: number }, ... }
+        const fields: Record<string, string> = {};
+        for (const key in result[0].fields) {
+          fields[key] = result[0].fields[key].value;
         }
-      } else {
-        warnNotAvailable('getNoteFields');
-        return {};
+        return fields;
       }
+      return {};
     },
   };
 
-  return <AnkiContext.Provider value={value}>{children}</AnkiContext.Provider>;
+  return (
+    <AnkiContext.Provider value={value}>{children}</AnkiContext.Provider>
+  );
 }

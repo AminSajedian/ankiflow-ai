@@ -1,7 +1,8 @@
 import { Link, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text } from "react-native";
-import { useAnkiContext } from "../../../../providers/AnkiProvider";
+import { FlatList, Pressable, StyleSheet } from "react-native";
+import { useAnkiContext } from "../../../providers/AnkiProvider";
+import { ThemedText } from "@/components/ThemedText";
 
 export default function FlashcardList() {
   const { deck } = useLocalSearchParams<{ deck: string }>();
@@ -21,13 +22,13 @@ export default function FlashcardList() {
       renderItem={({ item }: { item: string }) => (
         <Link
           href={{
-            pathname: "/(anki)/decks/[deck]/[noteId]",
+            pathname: "/decks/[deck]/[noteId]",
             params: { deck, noteId: item },
           }}
           asChild
         >
           <Pressable style={styles.noteItem}>
-            <Text>Note ID: {item}</Text>
+            <ThemedText>Note ID: {item}</ThemedText>
           </Pressable>
         </Link>
       )}

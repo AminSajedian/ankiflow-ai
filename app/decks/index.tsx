@@ -1,7 +1,9 @@
 import { Link } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text } from "react-native";
-import { useAnkiContext } from "../../../providers/AnkiProvider";
+import { FlatList, Pressable, StyleSheet } from "react-native";
+import { useAnkiContext } from "../../providers/AnkiProvider";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
 
 export default function DeckList() {
   const { getDecks } = useAnkiContext();
@@ -18,11 +20,11 @@ export default function DeckList() {
       keyExtractor={(item) => item}
       renderItem={({ item }: { item: string }) => (
         <Link
-          href={{ pathname: "/(anki)/decks/[deck]", params: { deck: item } }}
+          href={{ pathname: "/decks/[deck]", params: { deck: item } }}
           asChild
         >
           <Pressable style={styles.deckItem}>
-            <Text>{item}</Text>
+            <ThemedText>{item}</ThemedText>
           </Pressable>
         </Link>
       )}

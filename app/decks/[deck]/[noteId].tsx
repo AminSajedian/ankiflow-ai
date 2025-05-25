@@ -1,25 +1,28 @@
-import { useAnkiContext } from "../../../../providers/AnkiProvider";
+import { useAnkiContext } from "../../../providers/AnkiProvider";
 // import { generateFieldContent } from "@/utils/ai";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Button,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
-  View,
 } from "react-native";
-
 
 export default function FlashcardEditor() {
   const { noteId } = useLocalSearchParams<{ deck: string; noteId: string }>();
   const { updateNote, getNoteFields } = useAnkiContext();
   const [fields, setFields] = useState<Record<string, string>>({});
 
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
+
   useEffect(() => {
     if (noteId) {
-      getNoteFields(noteId).then(setFields);
+      getNoteFields(parseInt(noteId)).then(setFields);
     }
   }, [noteId, getNoteFields]);
 
@@ -33,19 +36,28 @@ export default function FlashcardEditor() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {Object.entries(fields).map(([name, value]) => (
-        <View key={name} style={styles.fieldContainer}>
-          <Text style={styles.label}>{name}</Text>
+        <ThemedView key={name} style={styles.fieldContainer}>
+          <ThemedText style={styles.label}>{name}</ThemedText>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                color: textColor,
+                backgroundColor: backgroundColor,
+                borderColor: textColor,
+              },
+            ]}
             value={typeof value === "string" ? value : ""}
             onChangeText={(t) => setFields((prev) => ({ ...prev, [name]: t ?? "" }))}
+            placeholderTextColor={textColor + "80"}
+            multiline
           />
           <Button title="AI Enhance" onPress={() => handleAI(name)} />
-        </View>
+        </ThemedView>
       ))}
       <Button
         title="Save"
-        onPress={() => noteId && updateNote(noteId, fields)}
+        onPress={() => noteId && updateNote(parseInt(noteId), fields)}
       />
     </ScrollView>
   );
@@ -64,9 +76,10 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 4,
-    padding: 8,
+    borderRadius: 8,
+    padding: 12,
     marginBottom: 8,
+    fontSize: 16,
+    textAlignVertical: 'top',
   },
 });
