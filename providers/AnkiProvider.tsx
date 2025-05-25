@@ -1,19 +1,15 @@
 // providers/AnkiProvider.tsx
 import { createContext, useContext } from "react";
 import { Platform } from 'react-native';
-import SendIntentAndroid from 'react-native-send-intent';
+import AnkiDroid from 'react-native-ankidroid';
 
-type AnkiAction =
-  | "deckNames"
-  | "findNotes"
-  | "updateNoteFields"
-  | "getNoteFields";
+const isAndroid = Platform.OS === 'android';
 
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
-  getNotes: (deck: string) => Promise<string[]>;
-  updateNote: (noteId: string, fields: Record<string, string>) => Promise<void>;
-  getNoteFields: (noteId: string) => Promise<Record<string, string>>;
+  getNotes: (deck: string) => Promise<number[]>;
+  updateNote: (noteId: number, fields: Record<string, string>) => Promise<void>;
+  getNoteFields: (noteId: number) => Promise<Record<string, string>>;
 }
 
 const AnkiContext = createContext<AnkiContextValue>({
@@ -27,87 +23,133 @@ export function useAnkiContext() {
   return useContext(AnkiContext);
 }
 
-// Helper to send broadcast and receive result via intent callback
-const sendAnkiIntent = async (
-  action: AnkiAction,
-  extras: Record<string, any> = {}
-): Promise<string> => {
-  console.log("🚀 ~ sendAnkiIntent ~ action:", action);
-
-  if (Platform.OS !== 'android') {
-    console.error('AnkiDroid integration only works on Android');
-    return '';
+const warnNotAvailable = (fn: string) => {
+  if (!isAndroid) {
+    console.warn(`AnkiDroid integration only works on Android. '${fn}' will return fallback value.`);
+    return;
   }
-
-  // react-native-send-intent uses sendBroadcast, not sendBroadcastIntent
-  try {
-    const extrasObj = {
-      api_version: 6,
-      ...extras,
-      action,
-    };
-
-    await SendIntentAndroid.sendBroadcast({
-      action: "com.ichi2.anki.action.API",
-      extras: extrasObj,
-    });
-
-    // No result is returned; AnkiDroid API via intent is fire-and-forget.
-    return "";
-  } catch (error) {
-    console.error("AnkiDroid error:", error);
-    return '';
-  }
+  AnkiDroid.isApiAvailable().then((installed: boolean) => {
+    if (!installed) {
+      console.warn(`AnkiDroid app is not installed. '${fn}' will return fallback value.`);
+    } else {
+      console.warn(`AnkiDroid ContentProvider not available or permission not granted. '${fn}' will return fallback value.`);
+    }
+  });
 };
 
-export function AnkiProvider({ children }: { children: React.ReactNode }) {
-  // No async loading needed for SendIntentAndroid (it's imported at the top)
-  // Always available after import
+async function ensurePermission(): Promise<boolean> {
+  if (!isAndroid) return false;
+  try {
+    const hasPermission = await AnkiDroid.checkPermission();
+    if (hasPermission) return true;
+    const [err, result] = await AnkiDroid.requestPermission();
+    if (err) {
+      console.warn("AnkiDroid: Permission request error", err);
+      return false;
+    }
+    return result === 'granted';
+  } catch (e) {
+    console.warn("AnkiDroid: Permission check/request failed", e);
+    return false;
+  }
+}
 
+function hasMessage(obj: any): obj is { message: string } {
+  return obj && typeof obj === 'object' && typeof obj.message === 'string';
+}
+
+export function AnkiProvider({ children }: { children: React.ReactNode }) {
   const value: AnkiContextValue = {
     getDecks: async () => {
-      try {
-        await sendAnkiIntent("deckNames");
-        // No result will be returned; this is a limitation of intent broadcast
-        // You may want to use a ContentProvider for real data
-        console.warn("AnkiProvider: getDecks cannot receive data via broadcast intent. Returning [].");
-        return [];
-      } catch (e) {
-        console.error("Failed to get decks:", e);
+      if (!isAndroid) {
+        warnNotAvailable('getDecks');
         return [];
       }
+      let [error, decks] = await AnkiDroid.getDeckList();
+      if (error && error.message === 'PERMISSION_DENIED_BY_USER') {
+        const granted = await ensurePermission();
+        if (granted) {
+          [error, decks] = await AnkiDroid.getDeckList();
+        }
+      }
+      if (error || !decks) {
+        console.warn("AnkiDroid: getDeckList error", error);
+        return [];
+      }
+      return decks.map(d => d.name);
     },
     getNotes: async (deck) => {
-      try {
-        await sendAnkiIntent("findNotes", {
-          query: `deck:"${deck}"`,
-        });
-        // No result will be returned; this is a limitation of intent broadcast
-        console.warn("AnkiProvider: getNotes cannot receive data via broadcast intent. Returning [].");
+      if (!isAndroid) {
+        warnNotAvailable('getNotes');
         return [];
-      } catch (e) {
-        console.error("Failed to get notes:", e);
+      }
+      if (typeof (AnkiDroid as any).getNotes === 'function') {
+        try {
+          let notes = await (AnkiDroid as any).getNotes(`deck:"${deck}"`);
+          // If permission denied, try to request and retry once
+          if (hasMessage(notes) && notes.message === 'PERMISSION_DENIED_BY_USER') {
+            const granted = await ensurePermission();
+            if (granted) {
+              notes = await (AnkiDroid as any).getNotes(`deck:"${deck}"`);
+            }
+          }
+          return notes || [];
+        } catch (e) {
+          console.error("Failed to get notes:", e);
+          return [];
+        }
+      } else {
+        warnNotAvailable('getNotes');
         return [];
       }
     },
     updateNote: async (noteId, fields) => {
-      try {
-        await sendAnkiIntent("updateNoteFields", {
-          noteId,
-          fields: JSON.stringify(fields),
-        });
-      } catch (e) {
-        console.error("Failed to update note:", e);
+      if (!isAndroid) {
+        warnNotAvailable('updateNote');
+        return;
+      }
+      if (typeof (AnkiDroid as any).updateNote === 'function') {
+        try {
+          await (AnkiDroid as any).updateNote(noteId, fields);
+        } catch (e) {
+          if (hasMessage(e) && e.message === 'PERMISSION_DENIED_BY_USER') {
+            const granted = await ensurePermission();
+            if (granted) {
+              try {
+                await (AnkiDroid as any).updateNote(noteId, fields);
+              } catch (err) {
+                console.error("Failed to update note after permission:", err);
+              }
+            }
+          } else {
+            console.error("Failed to update note:", e);
+          }
+        }
+      } else {
+        warnNotAvailable('updateNote');
       }
     },
     getNoteFields: async (noteId) => {
-      try {
-        await sendAnkiIntent("getNoteFields", { noteId });
-        // No result will be returned; this is a limitation of intent broadcast
-        console.warn("AnkiProvider: getNoteFields cannot receive data via broadcast intent. Returning {}.");
+      if (!isAndroid) {
+        warnNotAvailable('getNoteFields');
         return {};
-      } catch (e) {
-        console.error("Failed to get note fields:", e);
+      }
+      if (typeof (AnkiDroid as any).getNoteFields === 'function') {
+        try {
+          let fields = await (AnkiDroid as any).getNoteFields(noteId);
+          if (hasMessage(fields) && fields.message === 'PERMISSION_DENIED_BY_USER') {
+            const granted = await ensurePermission();
+            if (granted) {
+              fields = await (AnkiDroid as any).getNoteFields(noteId);
+            }
+          }
+          return fields || {};
+        } catch (e) {
+          console.error("Failed to get note fields:", e);
+          return {};
+        }
+      } else {
+        warnNotAvailable('getNoteFields');
         return {};
       }
     },
