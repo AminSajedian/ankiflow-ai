@@ -1,8 +1,7 @@
-import { useAnkiContext } from "../../../providers/AnkiProvider";
-// import { generateFieldContent } from "@/utils/ai";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { generateFieldContent } from "@/utils/ai";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -11,6 +10,7 @@ import {
   StyleSheet,
   TextInput,
 } from "react-native";
+import { useAnkiContext } from "../../../providers/AnkiProvider";
 
 export default function FlashcardEditor() {
   const { noteId } = useLocalSearchParams<{ deck: string; noteId: string }>();
@@ -27,10 +27,10 @@ export default function FlashcardEditor() {
   }, [noteId, getNoteFields]);
 
   const handleAI = async (fieldName: string) => {
-    // const newContent = await generateFieldContent(
-    //   `Generate content for ${fieldName} about ${fields.Front || "this topic"}`
-    // );
-    // setFields((prev) => ({ ...prev, [fieldName]: newContent ?? "" }));
+    const newContent = await generateFieldContent(
+      `Generate content for ${fieldName} about ${fields.Front || "this topic"}`
+    );
+    setFields((prev) => ({ ...prev, [fieldName]: newContent ?? "" }));
   };
 
   return (
