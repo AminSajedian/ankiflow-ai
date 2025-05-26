@@ -35,6 +35,12 @@ export default function AnkiLayout() {
               }}
             >
               <Stack.Screen
+                name="index"
+                options={{
+                  title: "Home",
+                }}
+              />
+              <Stack.Screen
                 name="decks/index"
                 options={{
                   title: "Your Decks",
