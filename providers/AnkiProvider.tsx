@@ -25,13 +25,18 @@ export function useAnkiContext() {
 }
 
 export function AnkiProvider({ children }: { children: React.ReactNode }) {
-  const { checkConnections } = useNetwork();
+  const { checkConnection } = useNetwork();
 
   async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
     try {
-      const { isOnline, hasAnkiConnect } = await checkConnections();
-      if (!isOnline || !hasAnkiConnect) {
-        logger.debug(`AnkiConnect not available - online: ${isOnline}, hasAnkiConnect: ${hasAnkiConnect}`);
+      if (!await checkConnection()) {
+        Toast.show({
+          type: 'error',
+          text1: 'Network Unavailable',
+          text2: 'Check your internet connection',
+          autoHide: false,
+          position: 'bottom',
+        });
         return undefined;
       }
 
@@ -87,7 +92,6 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
         text2: `Request failed:\n${message}`,
         autoHide: false,
         position: 'bottom',
-        onPress: () => Toast.hide(),
       });
       logger.error(`AnkiConnect failed: ${action}`, message);
       return undefined;
