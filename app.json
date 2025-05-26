@@ -20,12 +20,8 @@
       "edgeToEdgeEnabled": true,
       "package": "com.yourcompany.ankiflowai",
       "permissions": [
-        "com.ichi2.anki.permission.READ_WRITE_DATABASE"
-      ],
-      "intentFilters": [
-        {
-          "action": "com.ichi2.anki.api.READ_WRITE"
-        }
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
       ],
       "jsEngine": "hermes"
     },

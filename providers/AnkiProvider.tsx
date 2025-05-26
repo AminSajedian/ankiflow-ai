@@ -2,6 +2,8 @@
 import { logger } from "@/utils/logger";
 import axios from "axios";
 import { createContext, useContext } from "react";
+import Toast from 'react-native-toast-message';
+import { useNetwork } from './NetworkProvider';
 
 const ANKICONNECT_URL = "http://127.0.0.1:8765";
 
@@ -23,32 +25,55 @@ export function useAnkiContext() {
   return useContext(AnkiContext);
 }
 
-async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
-  try {
-    logger.debug(`AnkiConnect request: ${action}`, params);
-    const res = await axios.post(ANKICONNECT_URL, {
-      action,
-      version: 6,
-      params,
-    });
-    
-    if (res.data.error) {
-      logger.error(`AnkiConnect error: ${action}`, res.data.error);
+export function AnkiProvider({ children }: { children: React.ReactNode }) {
+  const { checkConnections } = useNetwork();
+
+  async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
+    try {
+      const { isOnline, hasAnkiConnect } = await checkConnections();
+      if (!isOnline || !hasAnkiConnect) return undefined;
+
+      logger.debug(`AnkiConnect requesting to: ${ANKICONNECT_URL}`);
+      const res = await axios.post(ANKICONNECT_URL, {
+        action,
+        version: 6,
+        params,
+      }, {
+        timeout: 5000,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (res.data.error) {
+        Toast.show({
+          type: 'error',
+          text1: 'AnkiConnect Error',
+          text2: res.data.error,
+          autoHide: false,
+          position: 'bottom',
+          onPress: () => Toast.hide(),
+        });
+        logger.error(`AnkiConnect error: ${action}`, res.data.error);
+        return undefined;
+      }
+      return res.data.result;
+    } catch (e: any) {
+      logger.error(`AnkiConnect failed: ${action}`, e.message);
       return undefined;
     }
-    logger.debug(`AnkiConnect response: ${action}`, res.data.result);
-    return res.data.result;
-  } catch (e: any) {
-    logger.error(`AnkiConnect failed: ${action}`, e.message);
-    return undefined;
   }
-}
 
-export function AnkiProvider({ children }: { children: React.ReactNode }) {
   const value: AnkiContextValue = {
     getDecks: async () => {
-      const result = await ankiRequest<string[]>("deckNames");
-      return result || [];
+      try {
+        const result = await ankiRequest<string[]>("deckNames");
+        logger.debug('Fetched decks:', result);
+        return result || [];
+      } catch (error) {
+        logger.error('Failed to get decks:', error);
+        return [];
+      }
     },
     getNotes: async (deck) => {
       // Find notes in the deck using a search query
