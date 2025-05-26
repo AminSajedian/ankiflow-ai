@@ -12,13 +12,13 @@
         "gradleCommand": ":app:assembleRelease"
       }
     },
-    "debug": {
-      "developmentClient": false,
-      "distribution": "internal"
-    },
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      }
     },
     "preview": {
       "distribution": "internal"
