@@ -1,6 +1,7 @@
 import { logger } from '@/utils/logger';
 import NetInfo from '@react-native-community/netinfo';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 interface NetworkContextValue {
@@ -13,58 +14,66 @@ const NetworkContext = createContext<NetworkContextValue>({
   checkConnections: async () => ({ isOnline: false, hasAnkiConnect: false }),
 });
 
+const getAnkiConnectUrl = () => {
+  if (Platform.OS === 'android') {
+    // Try different IP addresses in standalone build
+    const urls = [
+      'http://127.0.0.1:8765',
+      'http://10.0.2.2:8765',
+      'http://localhost:8765'
+    ];
+    return urls;
+  }
+  return ['http://127.0.0.1:8765'];
+};
+
 export function NetworkProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
 
   const checkAnkiConnect = async () => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const urls = getAnkiConnectUrl();
+    
+    for (const url of urls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-      const response = await fetch('http://127.0.0.1:8765', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'version',
-          version: 6
-        }),
-        signal: controller.signal,
-      }).catch((err) => {
-        throw new Error(err.message || 'Failed to connect to AnkiConnect');
-      });
+        logger.debug(`Trying AnkiConnect at: ${url}`);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'version',
+            version: 6
+          }),
+          signal: controller.signal,
+        });
 
-      clearTimeout(timeoutId);
-      const data = await response.json();
-      
-      if (!data || typeof data.result === 'undefined') {
-        throw new Error('Invalid response from AnkiConnect');
+        clearTimeout(timeoutId);
+        const data = await response.json();
+        
+        if (data?.result >= 6) {
+          logger.debug(`Connected to AnkiConnect at: ${url}`);
+          return true;
+        }
+      } catch (error: any) {
+        logger.debug(`Failed to connect to ${url}:`, error.message);
+        continue;
       }
-
-      return true;
-    } catch (error: any) {
-      const errorMessage = error.name === 'AbortError' 
-        ? 'Connection timed out'
-        : error.message === 'Network request failed'
-          ? 'Could not connect to AnkiConnect.\nMake sure the app is running.'
-          : error.message;
-
-      Toast.show({
-        type: 'error',
-        text1: 'AnkiConnect Error',
-        text2: errorMessage,
-        autoHide: false,
-        position: 'bottom',
-        onPress: () => Toast.hide(),
-      });
-      
-      logger.error('AnkiConnect check failed:', {
-        error: errorMessage,
-        details: error
-      });
-      return false;
     }
+
+    Toast.show({
+      type: 'error',
+      text1: 'AnkiConnect Not Available',
+      text2: 'Please ensure:\n1. AnkiConnect Android is running\n2. Port 8765 is accessible',
+      autoHide: false,
+      position: 'bottom',
+      onPress: () => Toast.hide(),
+    });
+    
+    return false;
   };
 
   const checkConnections = useCallback(async () => {

@@ -10,8 +10,7 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
-      },
-      "withoutCredentials": true
+      }
     },
     "debug": {
       "developmentClient": false,

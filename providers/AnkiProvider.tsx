@@ -1,10 +1,13 @@
 // providers/AnkiProvider.tsx
 import { logger } from "@/utils/logger";
 import { createContext, useContext } from "react";
+import { Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useNetwork } from './NetworkProvider';
 
-const ANKICONNECT_URL = "http://127.0.0.1:8765";
+const ANKICONNECT_URL = Platform.OS === 'android' 
+  ? 'http://127.0.0.1:8765'  // Use localhost for Android standalone
+  : 'http://127.0.0.1:8765';
 
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
