@@ -1,13 +1,48 @@
 // providers/AnkiProvider.tsx
 import { logger } from "@/utils/logger";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Platform } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useNetwork } from './NetworkProvider';
 
-const ANKICONNECT_URL = Platform.OS === 'android' 
-  ? 'http://127.0.0.1:8765'  // Use localhost for Android standalone
-  : 'http://127.0.0.1:8765';
+const ANKICONNECT_URLS = Platform.OS === 'android' 
+  ? [
+      'http://127.0.0.1:8765',
+      'http://10.0.2.2:8765',  // Android emulator
+      'http://localhost:8765'
+    ]
+  : ['http://127.0.0.1:8765'];
+
+async function findWorkingAnkiConnectUrl(): Promise<string | null> {
+  for (const url of ANKICONNECT_URLS) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'version',
+          version: 6
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const data = await response.json();
+      
+      if (data?.result >= 6) {
+        return url;
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+  return null;
+}
 
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
@@ -29,17 +64,25 @@ export function useAnkiContext() {
 
 export function AnkiProvider({ children }: { children: React.ReactNode }) {
   const { checkConnections } = useNetwork();
+  const [ankiConnectUrl, setAnkiConnectUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    findWorkingAnkiConnectUrl().then(setAnkiConnectUrl);
+  }, []);
 
   async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
     try {
       const { isOnline, hasAnkiConnect } = await checkConnections();
-      if (!isOnline || !hasAnkiConnect) return undefined;
+      if (!isOnline || !hasAnkiConnect || !ankiConnectUrl) {
+        logger.debug(`AnkiConnect not available - online: ${isOnline}, hasAnkiConnect: ${hasAnkiConnect}, url: ${ankiConnectUrl}`);
+        return undefined;
+      }
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      logger.debug(`AnkiConnect requesting to: ${ANKICONNECT_URL}`);
-      const res = await fetch(ANKICONNECT_URL, {
+      logger.debug(`AnkiConnect requesting to: ${ankiConnectUrl}`);
+      const res = await fetch(ankiConnectUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,6 +99,8 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeoutId);
 
       if (!res.ok) {
+        const errorText = await res.text();
+        logger.error(`HTTP error for ${action}:`, { status: res.status, body: errorText });
         throw new Error(`HTTP error! status: ${res.status}`);
       }
 
@@ -72,6 +117,8 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
         logger.error(`AnkiConnect error: ${action}`, data.error);
         return undefined;
       }
+      
+      logger.debug(`AnkiConnect ${action} response:`, data.result);
       return data.result;
     } catch (e: any) {
       const message = e.name === 'AbortError' 
@@ -93,14 +140,13 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
 
   const value: AnkiContextValue = {
     getDecks: async () => {
-      try {
-        const result = await ankiRequest<string[]>("deckNames");
-        logger.debug('Fetched decks:', result);
-        return result || [];
-      } catch (error) {
-        logger.error('Failed to get decks:', error);
+      const result = await ankiRequest<string[]>("deckNames");
+      if (!result) {
+        logger.warn('getDecks returned no results');
         return [];
       }
+      logger.debug('Fetched decks:', result);
+      return result;
     },
     getNotes: async (deck) => {
       // Find notes in the deck using a search query
