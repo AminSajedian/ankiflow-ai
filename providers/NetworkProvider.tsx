@@ -1,7 +1,6 @@
 import { logger } from '@/utils/logger';
 import NetInfo from '@react-native-community/netinfo';
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
 
 interface NetworkContextValue {
@@ -14,96 +13,99 @@ const NetworkContext = createContext<NetworkContextValue>({
   checkConnections: async () => ({ isOnline: false, hasAnkiConnect: false }),
 });
 
-const getAnkiConnectUrl = () => {
-  if (Platform.OS === 'android') {
-    // Try different IP addresses in standalone build
-    const urls = [
-      'http://127.0.0.1:8765',
-      'http://10.0.2.2:8765',
-      'http://localhost:8765'
-    ];
-    return urls;
-  }
-  return ['http://127.0.0.1:8765'];
-};
+const ANKICONNECT_URL = 'http://127.0.0.1:8765';
 
 export function NetworkProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
+  const isCheckingRef = useRef(false);
+  const isInitializedRef = useRef(false);
+  const lastCheck = useRef<{ time: number; result: { isOnline: boolean; hasAnkiConnect: boolean } } | null>(null);
 
   const checkAnkiConnect = async () => {
-    const urls = getAnkiConnectUrl();
-    
-    for (const url of urls) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-        logger.debug(`Trying AnkiConnect at: ${url}`);
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'version',
-            version: 6
-          }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-        const data = await response.json();
-        
-        if (data?.result >= 6) {
-          logger.debug(`Connected to AnkiConnect at: ${url}`);
-          return true;
-        }
-      } catch (error: any) {
-        logger.debug(`Failed to connect to ${url}:`, error.message);
-        continue;
-      }
+    // Skip if another check is in progress
+    if (isCheckingRef.current) {
+      logger.debug('Check AnkiConnect Connection already in progress, skipping');
+      return lastCheck.current?.result.hasAnkiConnect ?? false;
     }
 
-    Toast.show({
-      type: 'error',
-      text1: 'AnkiConnect Not Available',
-      text2: 'Please ensure:\n1. AnkiConnect Android is running\n2. Port 8765 is accessible',
-      autoHide: false,
-      position: 'bottom',
-      onPress: () => Toast.hide(),
-    });
-    
-    return false;
+    // Use cached result if available and not first check
+    if (isInitializedRef.current && lastCheck.current && Date.now() - lastCheck.current.time < 10000) {
+      logger.debug('Using cached AnkiConnect check result');
+      return lastCheck.current.result.hasAnkiConnect;
+    }
+
+    try {
+      isCheckingRef.current = true;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+      logger.debug(isInitializedRef.current ? 'Performing new AnkiConnect check' : 'Initial AnkiConnect check');
+      const response = await fetch(ANKICONNECT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'version', version: 6 }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const data = await response.json();
+      
+      return data?.result >= 6;
+    } catch (error: any) {
+      logger.debug('AnkiConnect check failed:', error.message);
+      return false;
+    } finally {
+      isCheckingRef.current = false;
+    }
   };
 
   const checkConnections = useCallback(async () => {
-    const state = await NetInfo.fetch();
-    const isOnline = !!state.isConnected;
-    setIsConnected(isOnline);
-
-    if (!isOnline) {
-      Toast.show({
-        type: 'error',
-        text1: 'Network Unavailable',
-        text2: 'Check your internet connection',
-        autoHide: false,
-        position: 'bottom',
-      });
-      return { isOnline, hasAnkiConnect: false };
+    // Skip if another check is in progress
+    if (isCheckingRef.current) {
+      logger.debug('Check already in progress, returning last result');
+      return lastCheck.current?.result ?? { isOnline: false, hasAnkiConnect: false };
     }
 
-    const hasAnkiConnect = await checkAnkiConnect();
-    if (!hasAnkiConnect) {
-      Toast.show({
-        type: 'error',
-        text1: 'AnkiConnect Unavailable',
-        text2: '1. Install AnkiConnect Android\n2. Start the app\n3. Try again',
-        autoHide: false,
-        position: 'bottom',
-      });
+    // Use cached result if available and not first check
+    if (isInitializedRef.current && lastCheck.current && Date.now() - lastCheck.current.time < 10000) {
+      logger.debug('Using cached connection check result');
+      return lastCheck.current.result;
     }
 
-    return { isOnline, hasAnkiConnect };
+    try {
+      isCheckingRef.current = true;
+      const state = await NetInfo.fetch();
+      const isOnline = !!state.isConnected;
+      setIsConnected(isOnline);
+
+      const result = {
+        isOnline,
+        hasAnkiConnect: isOnline ? await checkAnkiConnect() : false
+      };
+
+      lastCheck.current = {
+        time: Date.now(),
+        result
+      };
+
+      // Only show errors after initialization
+      if (!isInitializedRef.current && (!result.isOnline || !result.hasAnkiConnect)) {
+        Toast.show({
+          type: 'error',
+          text1: !result.isOnline ? 'Network Unavailable' : 'AnkiConnect Unavailable',
+          text2: !result.isOnline 
+            ? 'Check your internet connection'
+            : '1. Install AnkiConnect Android\n2. Start the app\n3. Try again',
+          autoHide: false,
+          position: 'bottom',
+        });
+      }
+
+      return result;
+    } finally {
+      isCheckingRef.current = false;
+      isInitializedRef.current = true;
+    }
   }, []);
 
   useEffect(() => {

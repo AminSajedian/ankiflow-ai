@@ -1,48 +1,10 @@
 // providers/AnkiProvider.tsx
 import { logger } from "@/utils/logger";
-import { createContext, useContext, useEffect, useState } from "react";
-import { Platform } from 'react-native';
+import { createContext, useContext } from "react";
 import Toast from 'react-native-toast-message';
 import { useNetwork } from './NetworkProvider';
 
-const ANKICONNECT_URLS = Platform.OS === 'android' 
-  ? [
-      'http://127.0.0.1:8765',
-      'http://10.0.2.2:8765',  // Android emulator
-      'http://localhost:8765'
-    ]
-  : ['http://127.0.0.1:8765'];
-
-async function findWorkingAnkiConnectUrl(): Promise<string | null> {
-  for (const url of ANKICONNECT_URLS) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'version',
-          version: 6
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const data = await response.json();
-      
-      if (data?.result >= 6) {
-        return url;
-      }
-    } catch (error) {
-      continue;
-    }
-  }
-  return null;
-}
+const ANKICONNECT_URL = 'http://127.0.0.1:8765';
 
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
@@ -64,25 +26,19 @@ export function useAnkiContext() {
 
 export function AnkiProvider({ children }: { children: React.ReactNode }) {
   const { checkConnections } = useNetwork();
-  const [ankiConnectUrl, setAnkiConnectUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    findWorkingAnkiConnectUrl().then(setAnkiConnectUrl);
-  }, []);
 
   async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
     try {
       const { isOnline, hasAnkiConnect } = await checkConnections();
-      if (!isOnline || !hasAnkiConnect || !ankiConnectUrl) {
-        logger.debug(`AnkiConnect not available - online: ${isOnline}, hasAnkiConnect: ${hasAnkiConnect}, url: ${ankiConnectUrl}`);
+      if (!isOnline || !hasAnkiConnect) {
+        logger.debug(`AnkiConnect not available - online: ${isOnline}, hasAnkiConnect: ${hasAnkiConnect}`);
         return undefined;
       }
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      logger.debug(`AnkiConnect requesting to: ${ankiConnectUrl}`);
-      const res = await fetch(ankiConnectUrl, {
+      const res = await fetch(ANKICONNECT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
