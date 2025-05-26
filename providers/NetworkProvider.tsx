@@ -18,6 +18,9 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
 
   const checkAnkiConnect = async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
       const response = await fetch('http://127.0.0.1:8765', {
         method: 'POST',
         headers: {
@@ -26,12 +29,40 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           action: 'version',
           version: 6
-        })
+        }),
+        signal: controller.signal,
+      }).catch((err) => {
+        throw new Error(err.message || 'Failed to connect to AnkiConnect');
       });
+
+      clearTimeout(timeoutId);
       const data = await response.json();
-      return data?.result >= 6;
-    } catch (error) {
-      logger.error('AnkiConnect check failed:', error);
+      
+      if (!data || typeof data.result === 'undefined') {
+        throw new Error('Invalid response from AnkiConnect');
+      }
+
+      return true;
+    } catch (error: any) {
+      const errorMessage = error.name === 'AbortError' 
+        ? 'Connection timed out'
+        : error.message === 'Network request failed'
+          ? 'Could not connect to AnkiConnect.\nMake sure the app is running.'
+          : error.message;
+
+      Toast.show({
+        type: 'error',
+        text1: 'AnkiConnect Error',
+        text2: errorMessage,
+        autoHide: false,
+        position: 'bottom',
+        onPress: () => Toast.hide(),
+      });
+      
+      logger.error('AnkiConnect check failed:', {
+        error: errorMessage,
+        details: error
+      });
       return false;
     }
   };

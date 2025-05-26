@@ -32,18 +32,29 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       const { isOnline, hasAnkiConnect } = await checkConnections();
       if (!isOnline || !hasAnkiConnect) return undefined;
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       logger.debug(`AnkiConnect requesting to: ${ANKICONNECT_URL}`);
       const res = await fetch(ANKICONNECT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           action,
           version: 6,
           params,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
       const data = await res.json();
       if (data.error) {
@@ -60,7 +71,19 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       }
       return data.result;
     } catch (e: any) {
-      logger.error(`AnkiConnect failed: ${action}`, e.message);
+      const message = e.name === 'AbortError' 
+        ? 'Request timed out' 
+        : e.message;
+      
+      Toast.show({
+        type: 'error',
+        text1: 'AnkiConnect Error',
+        text2: `Request failed:\n${message}`,
+        autoHide: false,
+        position: 'bottom',
+        onPress: () => Toast.hide(),
+      });
+      logger.error(`AnkiConnect failed: ${action}`, message);
       return undefined;
     }
   }

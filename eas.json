@@ -4,11 +4,6 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "base": {
-      "env": {
-        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyAl4JSkhX6lZpo5U5LF6HThfn3RUqOeOvI"
-      }
-    },
     "standalone": {
       "developmentClient": false,
       "distribution": "internal",
@@ -19,21 +14,17 @@
       "withoutCredentials": true
     },
     "debug": {
-      "extends": "base",
       "developmentClient": false,
       "distribution": "internal"
     },
     "development": {
-      "extends": "base",
       "developmentClient": true,
       "distribution": "internal"
     },
     "preview": {
-      "extends": "base",
       "distribution": "internal"
     },
     "production": {
-      "extends": "base",
       "autoIncrement": true
     }
   },
