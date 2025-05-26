@@ -1,6 +1,5 @@
 // providers/AnkiProvider.tsx
 import { logger } from "@/utils/logger";
-import axios from "axios";
 import { createContext, useContext } from "react";
 import Toast from 'react-native-toast-message';
 import { useNetwork } from './NetworkProvider';
@@ -34,30 +33,32 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       if (!isOnline || !hasAnkiConnect) return undefined;
 
       logger.debug(`AnkiConnect requesting to: ${ANKICONNECT_URL}`);
-      const res = await axios.post(ANKICONNECT_URL, {
-        action,
-        version: 6,
-        params,
-      }, {
-        timeout: 5000,
+      const res = await fetch(ANKICONNECT_URL, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({
+          action,
+          version: 6,
+          params,
+        }),
       });
-      
-      if (res.data.error) {
+
+      const data = await res.json();
+      if (data.error) {
         Toast.show({
           type: 'error',
           text1: 'AnkiConnect Error',
-          text2: res.data.error,
+          text2: data.error,
           autoHide: false,
           position: 'bottom',
           onPress: () => Toast.hide(),
         });
-        logger.error(`AnkiConnect error: ${action}`, res.data.error);
+        logger.error(`AnkiConnect error: ${action}`, data.error);
         return undefined;
       }
-      return res.data.result;
+      return data.result;
     } catch (e: any) {
       logger.error(`AnkiConnect failed: ${action}`, e.message);
       return undefined;

@@ -1,6 +1,5 @@
 import { logger } from '@/utils/logger';
 import NetInfo from '@react-native-community/netinfo';
-import axios from 'axios';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import Toast from 'react-native-toast-message';
 
@@ -19,24 +18,20 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
 
   const checkAnkiConnect = async () => {
     try {
-      const response = await axios.post('http://127.0.0.1:8765', {
-        action: 'version',
-        version: 6,
-      }, {
-        timeout: 3000
+      const response = await fetch('http://127.0.0.1:8765', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'version',
+          version: 6
+        })
       });
-      return response.data?.result >= 6;
-    } catch (error: any) {
-      const message = error?.message || 'Unknown error';
-      logger.error('AnkiConnect check failed:', message);
-      Toast.show({
-        type: 'error',
-        text1: 'Connection Failed',
-        text2: `Error: ${message}`,
-        autoHide: false,
-        position: 'bottom',
-        onPress: () => Toast.hide(),
-      });
+      const data = await response.json();
+      return data?.result >= 6;
+    } catch (error) {
+      logger.error('AnkiConnect check failed:', error);
       return false;
     }
   };
