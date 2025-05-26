@@ -1,10 +1,9 @@
 // providers/AnkiProvider.tsx
+import { logger } from "@/utils/logger";
 import axios from "axios";
 import { createContext, useContext } from "react";
-import { Platform } from "react-native";
 
-const isAndroid = Platform.OS === "android";
-const ANKICONNECT_URL = "http://localhost:8765"; // or use your device's IP if needed
+const ANKICONNECT_URL = "http://127.0.0.1:8765";
 
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
@@ -24,32 +23,23 @@ export function useAnkiContext() {
   return useContext(AnkiContext);
 }
 
-const warnNotAvailable = (fn: string) => {
-  if (!isAndroid) {
-    console.warn(
-      `AnkiConnect integration only works on Android. '${fn}' will return fallback value.`
-    );
-    return;
-  }
-  console.warn(
-    `AnkiConnect API not available or not running. '${fn}' will return fallback value.`
-  );
-};
-
 async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
   try {
+    logger.debug(`AnkiConnect request: ${action}`, params);
     const res = await axios.post(ANKICONNECT_URL, {
       action,
       version: 6,
       params,
     });
+    
     if (res.data.error) {
-      console.warn(`AnkiConnect error: ${res.data.error}`);
+      logger.error(`AnkiConnect error: ${action}`, res.data.error);
       return undefined;
     }
+    logger.debug(`AnkiConnect response: ${action}`, res.data.result);
     return res.data.result;
   } catch (e: any) {
-    console.warn("AnkiConnect HTTP error:", e && typeof e === "object" && "message" in e ? (e as any).message : e);
+    logger.error(`AnkiConnect failed: ${action}`, e.message);
     return undefined;
   }
 }
@@ -57,18 +47,10 @@ async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T
 export function AnkiProvider({ children }: { children: React.ReactNode }) {
   const value: AnkiContextValue = {
     getDecks: async () => {
-      if (!isAndroid) {
-        warnNotAvailable("getDecks");
-        return [];
-      }
       const result = await ankiRequest<string[]>("deckNames");
       return result || [];
     },
     getNotes: async (deck) => {
-      if (!isAndroid) {
-        warnNotAvailable("getNotes");
-        return [];
-      }
       // Find notes in the deck using a search query
       const result = await ankiRequest<number[]>("findNotes", {
         query: `deck:"${deck}"`,
@@ -76,10 +58,6 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       return result || [];
     },
     updateNote: async (noteId, fields) => {
-      if (!isAndroid) {
-        warnNotAvailable("updateNote");
-        return;
-      }
       await ankiRequest("updateNoteFields", {
         note: {
           id: noteId,
@@ -88,10 +66,6 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       });
     },
     getNoteFields: async (noteId) => {
-      if (!isAndroid) {
-        warnNotAvailable("getNoteFields");
-        return {};
-      }
       // Get note info and extract fields
       const result = await ankiRequest<any[]>("notesInfo", {
         notes: [noteId],
