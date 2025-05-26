@@ -4,9 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "build": "npm run build:setup && npm run build:app",
-    "build:app": "eas build --platform android --profile debug --local",
-    "build:setup": "adb reverse tcp:8765 tcp:8765",
+    "build": "eas build --platform android --profile standalone --local",
     "web": "expo start --web",
     "android": "expo run:android",
     "ios": "expo run:ios",
