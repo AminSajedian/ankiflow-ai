@@ -1,6 +1,6 @@
 // providers/AnkiProvider.tsx
 import { logger } from "@/utils/logger";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useRef } from "react";
 import Toast from 'react-native-toast-message';
 import { useNetwork } from './NetworkProvider';
 
@@ -26,6 +26,7 @@ export function useAnkiContext() {
 
 export function AnkiProvider({ children }: { children: React.ReactNode }) {
   const { checkConnection } = useNetwork();
+  const isInitialConnection = useRef(true);
 
   async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
     try {
@@ -59,6 +60,19 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
 
       clearTimeout(timeoutId);
 
+      // Show success toast on first successful connection
+      if (res.ok && isInitialConnection.current) {
+        Toast.show({
+          type: 'success',
+          text1: 'AnkiConnect Available',
+          text2: 'Successfully connected to AnkiConnect',
+          visibilityTime: 2000,
+          position: 'bottom',
+        });
+        logger.info('Successfully connected to AnkiConnect');
+        isInitialConnection.current = false;
+      }
+
       if (!res.ok) {
         const errorText = await res.text();
         logger.error(`HTTP error for ${action}:`, { status: res.status, body: errorText });
@@ -79,7 +93,7 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
         return undefined;
       }
       
-      logger.debug(`AnkiConnect ${action} response:`, data.result);
+      // logger.debug(`AnkiConnect ${action} response:`, data.result);
       return data.result;
     } catch (e: any) {
       const message = e.name === 'AbortError' 
@@ -105,7 +119,7 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
         logger.warn('getDecks returned no results');
         return [];
       }
-      logger.debug('Fetched decks:', result);
+      // logger.debug('Fetched decks:', result);
       return result;
     },
     getNotes: async (deck) => {

@@ -1,13 +1,13 @@
+import { ThemedText } from "@/components/ThemedText";
+import { useAnkiContext } from "@/providers/AnkiProvider";
 import { Link, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet } from "react-native";
-import { useAnkiContext } from "../../../providers/AnkiProvider";
-import { ThemedText } from "@/components/ThemedText";
 
 export default function FlashcardList() {
   const { deck } = useLocalSearchParams<{ deck: string }>();
   const { getNotes } = useAnkiContext();
-  const [notes, setNotes] = useState<string[]>([]);
+  const [notes, setNotes] = useState<number[]>([]);
 
   useEffect(() => {
     if (deck) {
@@ -18,12 +18,12 @@ export default function FlashcardList() {
   return (
     <FlatList
       data={notes}
-      keyExtractor={(item) => item}
-      renderItem={({ item }: { item: string }) => (
+      keyExtractor={(item) => item.toString()}
+      renderItem={({ item }: { item: number }) => (
         <Link
           href={{
             pathname: "/decks/[deck]/[noteId]",
-            params: { deck, noteId: item },
+            params: { deck, noteId: item.toString() },
           }}
           asChild
         >

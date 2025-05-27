@@ -10,7 +10,7 @@ import {
   StyleSheet,
   TextInput,
 } from "react-native";
-import { useAnkiContext } from "../../../providers/AnkiProvider";
+import { useAnkiContext } from "@/providers/AnkiProvider";
 
 export default function FlashcardEditor() {
   const { noteId } = useLocalSearchParams<{ deck: string; noteId: string }>();

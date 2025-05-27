@@ -4,7 +4,7 @@ export const logger = {
   debug: (...args: any[]) => {
     console.debug(`${LOG_TAG}:`, ...args);
   },
-  log: (...args: any[]) => {
+  info: (...args: any[]) => {
     console.log(`${LOG_TAG}:`, ...args);
   },
   warn: (...args: any[]) => {
