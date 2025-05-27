@@ -38,9 +38,9 @@ export default function AnkiLayout() {
                 name="decks/index"
                 options={{
                   title: "Your Decks",
-                  headerRight: () => (
-                    <ThemedText style={styles.headerRight}>AnkiFlow AI</ThemedText>
-                  ),
+                  // headerRight: () => (
+                  //   <ThemedText style={styles.headerRight}>AnkiFlow AI</ThemedText>
+                  // ),
                 }}
               />
               <Stack.Screen

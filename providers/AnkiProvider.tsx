@@ -6,11 +6,27 @@ import { useNetwork } from './NetworkProvider';
 
 const ANKICONNECT_URL = 'http://127.0.0.1:8765';
 
+interface AnkiNoteField {
+  value: string;
+  order: number;
+  description?: string;
+}
+
+interface AnkiNoteInfo {
+  noteId: number;
+  fields: Record<string, AnkiNoteField>;
+}
+
+interface FieldWithDescription {
+  value: string;
+  description: string;
+}
+
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
   getNotes: (deck: string) => Promise<number[]>;
   updateNote: (noteId: number, fields: Record<string, string>) => Promise<void>;
-  getNoteFields: (noteId: number) => Promise<Record<string, string>>;
+  getNoteFields: (noteId: number) => Promise<Record<string, FieldWithDescription>>;
 }
 
 const AnkiContext = createContext<AnkiContextValue>({
@@ -138,15 +154,26 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       });
     },
     getNoteFields: async (noteId) => {
-      // Get note info and extract fields
-      const result = await ankiRequest<any[]>("notesInfo", {
+      const modelResult = await ankiRequest<AnkiNoteInfo[]>("notesInfo", {
         notes: [noteId],
       });
-      if (result && result.length > 0 && result[0].fields) {
-        // result[0].fields is an object: { FieldName: { value: string, order: number }, ... }
-        const fields: Record<string, string> = {};
-        for (const key in result[0].fields) {
-          fields[key] = result[0].fields[key].value;
+
+      if (modelResult?.[0]?.fields) {
+        const fieldsArray = Object.entries(modelResult[0].fields)
+          .map(([key, field]) => ({
+            name: key,
+            value: field.value,
+            order: field.order,
+            description: field.description || ''
+          }))
+          .sort((a, b) => a.order - b.order);
+
+        const fields: Record<string, FieldWithDescription> = {};
+        for (const field of fieldsArray) {
+          fields[field.name] = {
+            value: field.value,
+            description: field.description
+          };
         }
         return fields;
       }
