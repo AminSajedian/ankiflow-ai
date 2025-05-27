@@ -13,7 +13,7 @@ import {
   StyleSheet,
   TextInput,
 } from "react-native";
-import Toast from 'react-native-toast-message';
+import Toast from "react-native-toast-message";
 
 interface FieldData {
   value: string;
@@ -38,55 +38,72 @@ export default function FlashcardEditor() {
 
   const handleAI = async (fieldName: string) => {
     const firstField = Object.values(fields)[0]?.value || "this topic";
-    const fieldDescription = fields[fieldName]?.description || fieldName;
-    console.log("🚀 ~ handleAI ~ fields:", fields)
-    console.log("🚀 ~ handleAI ~ fields[fieldName]:", fields[fieldName])
-    console.log("🚀 ~ handleAI ~ fields[fieldName].description:", fields[fieldName].description)
-    
+    const fieldDescription = fields[fieldName]?.description || ""; 
+    console.log("🚀 ~ handleAI ~ firstField:", firstField)
+    console.log("🚀 ~ handleAI ~ fieldDescription:", fieldDescription)
+
     const newContent = await generateFieldContent(
-      `Generate ${fieldDescription} for "${firstField}"`
+      `Generate ${fieldName} for "${firstField}" ${fieldDescription ? `"based on the description:" ${fieldDescription}` : ""}`,
     );
-    
-    setFields((prev) => ({
-      ...prev,
-      [fieldName]: { ...prev[fieldName], value: newContent?.trim() ?? "" }
-    }));
+    console.log("🚀 ~ handleAI ~ newContent:", newContent)
+
+    if (!newContent) return; // Don't proceed if no content was generated
+
+    setFields((prev) => {
+      const currentValue = prev[fieldName]?.value?.trim() || "";
+      let updatedValue = newContent.trim();
+      console.log("🚀 ~ setFields ~ currentValue:", currentValue)
+      console.log("🚀 ~ setFields ~ updatedValue:", updatedValue)
+
+      // If field already has content, add separator and new content
+      if (currentValue) {
+        updatedValue = `${currentValue}\n---\n${updatedValue}`;
+      }
+
+      return {
+        ...prev,
+        [fieldName]: { ...prev[fieldName], value: updatedValue },
+      };
+    });
   };
 
   const handleSave = async () => {
     if (!noteId) return;
-    
+
     try {
       // Convert fields back to simple value format for saving
-      const simpleFields = Object.entries(fields).reduce((acc, [key, field]) => {
-        acc[key] = field.value;
-        return acc;
-      }, {} as Record<string, string>);
+      const simpleFields = Object.entries(fields).reduce(
+        (acc, [key, field]) => {
+          acc[key] = field.value;
+          return acc;
+        },
+        {} as Record<string, string>
+      );
 
       await updateNote(parseInt(noteId), simpleFields);
       Toast.show({
-        type: 'success',
-        text1: 'Note Updated',
-        text2: 'Changes saved successfully',
+        type: "success",
+        text1: "Note Updated",
+        text2: "Changes saved successfully",
         visibilityTime: 2000,
-        position: 'bottom',
+        position: "bottom",
       });
     } catch (error: any) {
       Toast.show({
-        type: 'error',
-        text1: 'Save Failed',
-        text2: error?.message || 'Failed to update note',
-        position: 'bottom',
+        type: "error",
+        text1: "Save Failed",
+        text2: error?.message || "Failed to update note",
+        position: "bottom",
       });
     }
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={true}
@@ -95,26 +112,30 @@ export default function FlashcardEditor() {
           <ThemedView key={name} style={styles.fieldContainer}>
             <ThemedText style={styles.label}>{name}</ThemedText>
             {field.description && (
-              <ThemedText style={styles.description}>{field.description}</ThemedText>
+              <ThemedText style={styles.description}>
+                {field.description}
+              </ThemedText>
             )}
             <TextInput
-              style={[styles.input, {
-                color: textColor,
-                backgroundColor: backgroundColor,
-                borderColor: textColor,
-              }]}
+              style={[
+                styles.input,
+                {
+                  color: textColor,
+                  backgroundColor: backgroundColor,
+                  borderColor: textColor,
+                },
+              ]}
               value={field.value}
-              onChangeText={(t) => setFields(prev => ({
-                ...prev,
-                [name]: { ...prev[name], value: t }
-              }))}
+              onChangeText={(t) =>
+                setFields((prev) => ({
+                  ...prev,
+                  [name]: { ...prev[name], value: t },
+                }))
+              }
               placeholderTextColor={textColor + "80"}
               multiline
             />
-            <Button 
-              title="AI Enhance" 
-              onPress={() => handleAI(name)} 
-            />
+            <Button title="AI Enhance" onPress={() => handleAI(name)} />
           </ThemedView>
         ))}
         <Button title="Save" onPress={handleSave} />
@@ -141,12 +162,12 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     fontSize: 16,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   description: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginBottom: 4,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 });
