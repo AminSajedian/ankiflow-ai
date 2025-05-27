@@ -7,6 +7,8 @@ import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Button,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -80,41 +82,51 @@ export default function FlashcardEditor() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {Object.entries(fields).map(([name, field]) => (
-        <ThemedView key={name} style={styles.fieldContainer}>
-          <ThemedText style={styles.label}>{name}</ThemedText>
-          {field.description && (
-            <ThemedText style={styles.description}>{field.description}</ThemedText>
-          )}
-          <TextInput
-            style={[styles.input, {
-              color: textColor,
-              backgroundColor: backgroundColor,
-              borderColor: textColor,
-            }]}
-            value={field.value}
-            onChangeText={(t) => setFields(prev => ({
-              ...prev,
-              [name]: { ...prev[name], value: t }
-            }))}
-            placeholderTextColor={textColor + "80"}
-            multiline
-          />
-          <Button 
-            title="AI Enhance" 
-            onPress={() => handleAI(name)} 
-          />
-        </ThemedView>
-      ))}
-      <Button title="Save" onPress={handleSave} />
-    </ScrollView>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={true}
+      >
+        {Object.entries(fields).map(([name, field]) => (
+          <ThemedView key={name} style={styles.fieldContainer}>
+            <ThemedText style={styles.label}>{name}</ThemedText>
+            {field.description && (
+              <ThemedText style={styles.description}>{field.description}</ThemedText>
+            )}
+            <TextInput
+              style={[styles.input, {
+                color: textColor,
+                backgroundColor: backgroundColor,
+                borderColor: textColor,
+              }]}
+              value={field.value}
+              onChangeText={(t) => setFields(prev => ({
+                ...prev,
+                [name]: { ...prev[name], value: t }
+              }))}
+              placeholderTextColor={textColor + "80"}
+              multiline
+            />
+            <Button 
+              title="AI Enhance" 
+              onPress={() => handleAI(name)} 
+            />
+          </ThemedView>
+        ))}
+        <Button title="Save" onPress={handleSave} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     padding: 16,
+    paddingBottom: 100, // Add extra padding at bottom for keyboard
   },
   fieldContainer: {
     marginBottom: 16,
