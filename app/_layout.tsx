@@ -52,10 +52,10 @@ export default function AnkiLayout() {
               <Stack.Screen
                 name="decks/[deck]/[noteId]"
                 options={{
-                  title: "Edit Flashcard",
-                  headerRight: () => (
-                    <ThemedText style={styles.headerRight}>AI Assistant</ThemedText>
-                  ),
+                  title: "AI Flashcard Editor",
+                  // headerRight: () => (
+                  //   <ThemedText style={styles.headerRight}>AI Assistant</ThemedText>
+                  // ),
                 }}
               />
               <Stack.Screen

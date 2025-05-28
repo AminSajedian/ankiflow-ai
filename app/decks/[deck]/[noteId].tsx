@@ -39,6 +39,7 @@ export default function FlashcardEditor() {
   const handleAI = async (fieldName: string) => {
     const firstField = Object.values(fields)[0]?.value || "this topic";
     const fieldDescription = fields[fieldName]?.description || ""; 
+    console.log("🚀 ~ handleAI ~ fields:", fields)
     console.log("🚀 ~ handleAI ~ firstField:", firstField)
     console.log("🚀 ~ handleAI ~ fieldDescription:", fieldDescription)
 

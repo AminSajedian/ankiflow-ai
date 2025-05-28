@@ -5,6 +5,7 @@
   "scripts": {
     "start": "expo start",
     "build": "eas build --platform android --profile standalone --local",
+    "android:emu": "emulator -avd Pixel_7",
     "web": "expo start --web",
     "android": "expo run:android",
     "ios": "expo run:ios",

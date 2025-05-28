@@ -42,3 +42,4 @@ app-example
 
 *.apk
 eas.json
+.idea

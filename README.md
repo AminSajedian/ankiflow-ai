@@ -1,50 +1,87 @@
-# Welcome to your Expo app 👋
+# AnkiFlow AI 🧠
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Overview
 
-## Get started
+AnkiFlow AI is a modern flashcard learning application that enhances your study experience with artificial intelligence. Built with React Native and Expo, this app combines spaced repetition learning principles with AI assistance to make your learning more effective and personalized.
 
-1. Install dependencies
+The application follows a deck-based organization similar to traditional flashcard apps like Anki, but elevates the experience with AI-powered features that adapt to your learning patterns and help generate better study materials.
 
-   ```bash
-   npm install
-   ```
+## Key Features
 
-2. Start the app
+### Flashcard Deck Management
+- Create, organize, and manage your study materials in customizable decks
+- Sort and filter decks based on study progress, categories, or importance
+- Import and export functionality for sharing decks with others
 
-   ```bash
-   npx expo start
-   ```
+### AI-Powered Learning Assistance
+- Leverage Google's Generative AI to enhance your flashcards
+- Get AI-generated explanations for difficult concepts
+- Receive suggestions for related topics to explore
+- Automatic difficulty adjustment based on your performance
 
-In the output, you'll find options to open the app in a
+### Modern Mobile Interface
+- Intuitive bottom sheet design for smooth interaction
+- Gesture-based navigation for quick review of flashcards
+- Responsive UI that adapts to different screen sizes and orientations
+- Dark mode support for comfortable studying in any lighting condition
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Web Content Integration
+- Seamlessly incorporate web resources into your study materials
+- Preview web content directly within the app
+- Extract key information from websites to create new flashcards
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Study Progress Tracking
+- Visual analytics to track your learning progress
+- Spaced repetition algorithm optimized by AI for better retention
+- Performance metrics to identify areas needing more focus
 
-## Get a fresh project
+## Technology Stack
 
-When you're ready, run:
+- **Framework**: React Native with Expo (v53.0.9)
+- **Navigation**: Expo Router with file-based routing
+- **UI Components**:
+   - Various Expo components (blur, vector icons)
+   - Bottom sheet for interactive elements (@gorhom/bottom-sheet)
+   - Gesture handling (react-native-gesture-handler)
+- **AI Integration**: Google's Generative AI (@google/genai)
+- **State Management**: React context via providers
+- **Web Integration**: WebView (react-native-webview)
 
-```bash
-npm run reset-project
-```
+## App Structure
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+AnkiFlow AI follows a modular architecture with these key areas:
 
-## Learn more
+- **Main Dashboard**: Entry point displaying your learning progress and deck overview
+- **Deck Management**: Browse, create, and organize your flashcard collections
+- **Study Mode**: Interactive learning environment with AI assistance
+- **Settings**: Customize your learning experience and AI preferences
 
-To learn more about developing your project with Expo, look at the following resources:
+## Getting Started
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Install the app from your device's app store or build from source
+2. Create your first deck or import existing flashcard collections
+3. Begin studying with AI-enhanced flashcards
+4. Track your progress and adjust study settings as needed
 
-## Join the community
+## For Developers
 
-Join our community of developers creating universal apps.
+If you're interested in contributing to AnkiFlow AI:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. The project uses standard React Native and Expo development practices
+2. Explore the modular structure in the app directory
+3. Follow the contribution guidelines in our repository
+
+## Learn More
+
+- [Spaced Repetition Learning](https://ncase.me/remember/): Understand the science behind effective flashcard learning
+- [Google GenerativeAI](https://ai.google.dev/): Explore the AI capabilities used in AnkiFlow
+- [React Native](https://reactnative.dev/): Learn about the underlying framework
+
+## Join the AnkiFlow Community
+
+We're building the future of AI-enhanced learning:
+
+- **GitHub**: Star and follow our repository for updates
+- **Issues**: Report bugs or request features through GitHub issues
+- **Contributions**: Pull requests are welcome!
+- **Discord**: Join our community of learners and developers
