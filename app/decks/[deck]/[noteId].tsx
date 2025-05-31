@@ -68,50 +68,45 @@ export default function NoteEditor() {
     loadNote();
   }, [noteId, getNoteFields, getNoteType]);
 
-  // Handle updating field value
+  // Handle updating field value - append new content with a separator
   const updateField = (fieldName: string, value: string) => {
-    setFieldsData(prev => ({
-      ...prev,
-      [fieldName]: {
-        ...prev[fieldName],
-        value
-      }
-    }));
+    setFieldsData(prev => {
+      const currentValue = prev[fieldName]?.value || "";
+      // Add the separator (three hyphens) if both current value and new value exist
+      const separator = currentValue && value ? "\n\n---\n\n" : "";
+      
+      return {
+        ...prev,
+        [fieldName]: {
+          ...prev[fieldName],
+          value: currentValue + separator + value
+        }
+      };
+    });
   };
 
   // Generate content with AI
-  const generateWithAI = async (fieldName: string) => {
-    console.log("Generate button clicked for field:", fieldName);
+  const generateWithAI = async (targetFieldName: string) => {
+    console.log("Generate button clicked for field:", targetFieldName);
     
     // Get the instruction for this field
-    const instruction = getInstruction(fieldName);
-    
-    // if (!instruction) {
-    //   console.log("No instruction found for field:", fieldName);
-    //   Toast.show({
-    //     type: 'info',
-    //     text1: 'No AI instruction',
-    //     text2: 'Please add an instruction for this field first',
-    //     position: 'bottom'
-    //   });
-    //   return;
-    // }
+    const fieldInstruction = getInstruction(targetFieldName);
     
     try {
       // Show loading state
-      setIsGenerating(prev => ({ ...prev, [fieldName]: true }));
-      console.log("Starting generation for field:", fieldName);
+      setIsGenerating(prev => ({ ...prev, [targetFieldName]: true }));
+      console.log("Starting generation for field:", targetFieldName);
       
       // Get the field description
       const firstFieldValue = Object.values(fieldsData)[0]?.value;
       console.log("🚀 ~ generateWithAI ~ firstFieldValue:", firstFieldValue);
       
       // Call the AI service
-      const content = await generateContent(instruction, firstFieldValue);
-      console.log("Generation successful, updating field:", fieldName);
+      const content = await generateContent(targetFieldName, firstFieldValue, fieldInstruction);
+      console.log("Generation successful, updating field:", targetFieldName);
       
       // Update the field
-      updateField(fieldName, content);
+      updateField(targetFieldName, content);
       
       Toast.show({
         type: 'success',
@@ -128,7 +123,7 @@ export default function NoteEditor() {
       });
     } finally {
       // Reset generating state
-      setIsGenerating(prev => ({ ...prev, [fieldName]: false }));
+      setIsGenerating(prev => ({ ...prev, [targetFieldName]: false }));
     }
   };
 
@@ -180,7 +175,7 @@ export default function NoteEditor() {
           onPress={() => setShowInstructions(!showInstructions)}
         >
           <ThemedText style={styles.instructionsToggleText}>
-            {showInstructions ? 'Hide AI Instructions' : 'Show AI Instructions'}
+            {showInstructions ? 'Hide All Field Instructions' : 'Show All Field Instructions'}
           </ThemedText>
           <Ionicons 
             name={showInstructions ? "chevron-up" : "chevron-down"} 
