@@ -1,7 +1,8 @@
 import { ThemedText } from "@/components/ThemedText";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { useAIInstructions } from "@/hooks/useAIInstructions";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { useAnkiContext } from "@/providers/AnkiProvider";
+import { generateContent } from "@/utils/aiService";
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -96,9 +97,11 @@ export default function NoteEditor() {
     setIsGenerating(prev => ({ ...prev, [fieldName]: true }));
     
     try {
-      // This would be where you call your AI API
-      // For now, we'll use a mock function
-      const content = await mockGenerateContent(instruction);
+      // Use the real AI service
+      const content = await generateContent(
+        instruction, 
+        fieldsData[fieldName].value
+      );
       
       // Update the field
       updateField(fieldName, content);
@@ -112,21 +115,12 @@ export default function NoteEditor() {
       console.error("Error generating content:", error);
       Toast.show({
         type: 'error',
-        text1: 'Failed to generate content',
+        text1: error instanceof Error ? error.message : 'Failed to generate content',
         position: 'bottom'
       });
     } finally {
       setIsGenerating(prev => ({ ...prev, [fieldName]: false }));
     }
-  };
-
-  // Mock function to simulate AI generation
-  const mockGenerateContent = async (instruction: string): Promise<string> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(`AI generated content based on instruction: "${instruction}"`);
-      }, 1500);
-    });
   };
 
   // Save note changes

@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { DeckNode, flattenDeckTree, organizeDeckTree } from "@/utils/deckOrganizer";
 import { Ionicons } from '@expo/vector-icons';
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet } from "react-native";
 import Toast from 'react-native-toast-message';
@@ -127,17 +127,32 @@ export default function DeckList() {
   }
 
   return (
-    <FlatList
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        />
-      }
-      data={visibleDecks}
-      keyExtractor={(item) => item}
-      renderItem={renderDeckItem}
-    />
+    <ThemedView style={styles.container}>
+      <Stack.Screen
+        options={{
+          title: "Your Decks",
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push('/settings')}
+              style={{ marginRight: 15 }}
+            >
+              <Ionicons name="settings-outline" size={24} color="#fff" />
+            </Pressable>
+          ),
+        }}
+      />
+      <FlatList
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
+        data={visibleDecks}
+        keyExtractor={(item) => item}
+        renderItem={renderDeckItem}
+      />
+    </ThemedView>
   );
 }
 
