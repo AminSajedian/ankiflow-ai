@@ -47,7 +47,7 @@ export default function NoteEditor() {
         
         // First get the note type
         const type = await getNoteType(Number(noteId));
-        console.log("Note type:", type);
+        // console.log("Note type:", type);
         setNoteType(type);
         
         // Then load note fields
@@ -81,27 +81,34 @@ export default function NoteEditor() {
 
   // Generate content with AI
   const generateWithAI = async (fieldName: string) => {
+    console.log("Generate button clicked for field:", fieldName);
+    
     // Get the instruction for this field
     const instruction = getInstruction(fieldName);
     
-    if (!instruction) {
-      Toast.show({
-        type: 'info',
-        text1: 'No AI instruction',
-        text2: 'Please add an instruction for this field first',
-        position: 'bottom'
-      });
-      return;
-    }
-    
-    setIsGenerating(prev => ({ ...prev, [fieldName]: true }));
+    // if (!instruction) {
+    //   console.log("No instruction found for field:", fieldName);
+    //   Toast.show({
+    //     type: 'info',
+    //     text1: 'No AI instruction',
+    //     text2: 'Please add an instruction for this field first',
+    //     position: 'bottom'
+    //   });
+    //   return;
+    // }
     
     try {
-      // Use the real AI service
-      const content = await generateContent(
-        instruction, 
-        fieldsData[fieldName].value
-      );
+      // Show loading state
+      setIsGenerating(prev => ({ ...prev, [fieldName]: true }));
+      console.log("Starting generation for field:", fieldName);
+      
+      // Get the field description
+      const firstFieldValue = Object.values(fieldsData)[0]?.value;
+      console.log("🚀 ~ generateWithAI ~ firstFieldValue:", firstFieldValue);
+      
+      // Call the AI service
+      const content = await generateContent(instruction, firstFieldValue);
+      console.log("Generation successful, updating field:", fieldName);
       
       // Update the field
       updateField(fieldName, content);
@@ -115,10 +122,12 @@ export default function NoteEditor() {
       console.error("Error generating content:", error);
       Toast.show({
         type: 'error',
-        text1: error instanceof Error ? error.message : 'Failed to generate content',
+        text1: 'Failed to generate content',
+        text2: error instanceof Error ? error.message : 'Unknown error',
         position: 'bottom'
       });
     } finally {
+      // Reset generating state
       setIsGenerating(prev => ({ ...prev, [fieldName]: false }));
     }
   };
@@ -185,7 +194,7 @@ export default function NoteEditor() {
         <View key={fieldName} style={styles.fieldContainer}>
           {/* Field title/header */}
           <View style={styles.fieldHeaderContainer}>
-            <ThemedText style={styles.fieldTitle}>{field.description}</ThemedText>
+            <ThemedText style={styles.fieldTitle}>{fieldName}</ThemedText>
           </View>
           
           {/* Field content input */}
@@ -232,19 +241,26 @@ export default function NoteEditor() {
               />
               
               <ThemedText style={styles.instructionNote}>
-                This instruction applies to all notes with type "{noteType}"
+                This instruction applies to "{fieldName}" field of all notes with "{noteType}" type.
               </ThemedText>
             </View>
           )}
           
           {/* Generate button */}
           <Pressable
-            style={[
+            style={({ pressed }) => [
               styles.generateButton,
-              isGenerating[fieldName] && styles.generateButtonDisabled
+              isGenerating[fieldName] && styles.generateButtonDisabled,
+              pressed && styles.generateButtonPressed, // Add visual feedback when pressed
             ]}
-            onPress={() => generateWithAI(fieldName)}
+            onPress={() => {
+              console.log("Generate button pressed for field:", fieldName);
+              generateWithAI(fieldName);
+            }}
             disabled={isGenerating[fieldName]}
+            // Add extra properties to ensure it's touchable
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
           >
             {isGenerating[fieldName] ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -323,7 +339,7 @@ const styles = StyleSheet.create({
   fieldInput: {
     borderWidth: 1,
     padding: 12,
-    minHeight: 120,
+    minHeight: 60,
     textAlignVertical: 'top',
     fontSize: 16,
     borderTopWidth: 0,
@@ -360,9 +376,15 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
+    // Make sure it's not hidden or has opacity: 0
+    opacity: 1,
+    zIndex: 1,
   },
   generateButtonDisabled: {
     backgroundColor: '#007AFF80',
+  },
+  generateButtonPressed: {
+    backgroundColor: '#0056b3', // Darker color when pressed
   },
   generateButtonText: {
     color: 'white',

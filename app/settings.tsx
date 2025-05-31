@@ -116,7 +116,7 @@ export default function Settings() {
           <ThemedText style={styles.helperText}>
             You need a Gemini API key to use AI features. Get one at{' '}
             <ThemedText style={styles.link}>
-              https://makersuite.google.com/app/apikey
+              https://aistudio.google.com/app/apikey
             </ThemedText>
           </ThemedText>
 

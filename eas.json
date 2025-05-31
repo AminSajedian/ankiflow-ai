@@ -10,9 +10,6 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
-      },
-      "env": {
-        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyAsUIGJE0E2iCj6O3FLm2BFKcLxl85dPeg"
       }
     },
     "development": {
