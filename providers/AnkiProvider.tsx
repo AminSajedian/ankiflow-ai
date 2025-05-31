@@ -22,11 +22,21 @@ interface FieldWithDescription {
   description: string;
 }
 
+interface NoteType {
+  id: number;
+  name: string;
+  fields: string[];
+}
+
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
   getNotes: (deck: string) => Promise<number[]>;
   updateNote: (noteId: number, fields: Record<string, string>) => Promise<void>;
   getNoteFields: (noteId: number) => Promise<Record<string, FieldWithDescription>>;
+  updateNoteFields: (noteId: number, fields: Record<string, FieldWithDescription>) => Promise<boolean>;
+  getNoteType: (noteId: number) => Promise<string>;
+  getNoteTypeFields: (modelName: string) => Promise<string[]>;
+  getAllNoteTypes: () => Promise<NoteType[]>;
 }
 
 const AnkiContext = createContext<AnkiContextValue>({
@@ -34,6 +44,10 @@ const AnkiContext = createContext<AnkiContextValue>({
   getNotes: async () => [],
   updateNote: async () => {},
   getNoteFields: async () => ({}),
+  updateNoteFields: async () => false,
+  getNoteType: async () => '',
+  getNoteTypeFields: async () => [],
+  getAllNoteTypes: async () => [],
 });
 
 export function useAnkiContext() {
@@ -128,6 +142,140 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const getNoteType = async (noteId: number): Promise<string> => {
+    try {
+      const response = await fetch(ANKICONNECT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'notesInfo',
+          version: 6,
+          params: {
+            notes: [noteId]
+          }
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      if (!data.result || data.result.length === 0) {
+        throw new Error('Note not found');
+      }
+      
+      // Return the modelName from the note info
+      return data.result[0].modelName;
+    } catch (error) {
+      console.error('Error fetching note type:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'AnkiConnect Error',
+        text2: 'Failed to fetch note type from Anki',
+        autoHide: false,
+        position: 'bottom',
+      });
+      return '';
+    }
+  };
+  
+  const updateNoteFields = async (noteId: number, fields: Record<string, FieldWithDescription>): Promise<boolean> => {
+    try {
+      // Implement your logic to update note fields in Anki
+      // This is a placeholder - replace with your actual implementation
+      console.log(`Updating fields for note ${noteId}`, fields);
+      
+      // Return true if successful
+      return true;
+    } catch (error) {
+      console.error('Error updating note fields:', error);
+      return false;
+    }
+  };
+
+  const getNoteTypeFields = async (modelName: string): Promise<string[]> => {
+    try {
+      const response = await fetch(ANKICONNECT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'modelFieldNames',
+          version: 6,
+          params: {
+            modelName: modelName
+          }
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      return data.result;
+    } catch (error) {
+      console.error('Error fetching model fields:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'AnkiConnect Error',
+        text2: 'Failed to fetch note type fields from Anki',
+        autoHide: false,
+        position: 'bottom',
+      });
+      return [];
+    }
+  };
+  
+  const getAllNoteTypes = async (): Promise<NoteType[]> => {
+    try {
+      // First get note type names and ids
+      const namesResponse = await fetch(ANKICONNECT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'modelNamesAndIds',
+          version: 6
+        }),
+      });
+      
+      const namesData = await namesResponse.json();
+      if (namesData.error) {
+        throw new Error(namesData.error);
+      }
+      
+      // Then get fields for each note type
+      const noteTypes: NoteType[] = [];
+      
+      for (const [name, id] of Object.entries(namesData.result)) {
+        const fields = await getNoteTypeFields(name);
+        noteTypes.push({
+          id: id as number,
+          name,
+          fields
+        });
+      }
+      
+      return noteTypes;
+    } catch (error) {
+      console.error('Error fetching note types:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'AnkiConnect Error',
+        text2: 'Failed to fetch note types from Anki',
+        autoHide: false,
+        position: 'bottom',
+      });
+      return [];
+    }
+  };
+  
   const value: AnkiContextValue = {
     getDecks: async () => {
       const result = await ankiRequest<string[]>("deckNames");
@@ -179,6 +327,10 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       }
       return {};
     },
+    updateNoteFields,
+    getNoteType,
+    getNoteTypeFields,
+    getAllNoteTypes,
   };
 
   return (
