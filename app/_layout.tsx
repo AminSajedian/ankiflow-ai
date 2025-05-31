@@ -9,8 +9,8 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
-import { StyleSheet } from "react-native";
+import { Stack, Link } from "expo-router";
+import { StyleSheet, TouchableOpacity } from "react-native";
 import Toast from 'react-native-toast-message';
 
 export default function AnkiLayout() {
@@ -39,7 +39,11 @@ export default function AnkiLayout() {
                 options={{
                   title: "Your Decks",
                   // headerRight: () => (
-                  //   <ThemedText style={styles.headerRight}>AnkiFlow AI</ThemedText>
+                  //   <Link href="/test/ankidroid" asChild>
+                  //     <TouchableOpacity>
+                  //       <ThemedText style={styles.headerRight}>AnkiDroidTest</ThemedText>
+                  //     </TouchableOpacity>
+                  //   </Link>
                   // ),
                 }}
               />
@@ -53,9 +57,12 @@ export default function AnkiLayout() {
                 name="decks/[deck]/[noteId]"
                 options={{
                   title: "AI Flashcard Editor",
-                  // headerRight: () => (
-                  //   <ThemedText style={styles.headerRight}>AI Assistant</ThemedText>
-                  // ),
+                }}
+              />
+              <Stack.Screen
+                name="test/ankidroid"
+                options={{
+                  title: "AnkiDroid Test",
                 }}
               />
               <Stack.Screen
@@ -98,6 +105,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
     fontSize: 16,
     fontWeight: "500",
+    color: '#007AFF', // Make it look like a link
   },
   toast: {
     padding: 16,
