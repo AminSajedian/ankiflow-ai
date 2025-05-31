@@ -9,8 +9,8 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack, Link } from "expo-router";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { Stack } from "expo-router";
+import { StyleSheet } from "react-native";
 import Toast from 'react-native-toast-message';
 
 export default function AnkiLayout() {
@@ -59,12 +59,12 @@ export default function AnkiLayout() {
                   title: "AI Flashcard Editor",
                 }}
               />
-              <Stack.Screen
+              {/* <Stack.Screen
                 name="test/ankidroid"
                 options={{
                   title: "AnkiDroid Test",
                 }}
-              />
+              /> */}
               <Stack.Screen
                 name="+not-found"
                 options={{
@@ -84,6 +84,12 @@ export default function AnkiLayout() {
                 ),
                 error: ({ text1, text2 }) => (
                   <ThemedView style={[styles.toast, styles.errorToast]}>
+                    <ThemedText style={styles.toastTitle}>{text1}</ThemedText>
+                    {text2 && <ThemedText style={styles.toastMessage}>{text2}</ThemedText>}
+                  </ThemedView>
+                ),
+                info: ({ text1, text2 }) => (
+                  <ThemedView style={[styles.toast, styles.infoToast]}>
                     <ThemedText style={styles.toastTitle}>{text1}</ThemedText>
                     {text2 && <ThemedText style={styles.toastMessage}>{text2}</ThemedText>}
                   </ThemedView>
@@ -115,6 +121,9 @@ const styles = StyleSheet.create({
   },
   errorToast: {
     backgroundColor: '#F44336',
+  },
+  infoToast: {
+    backgroundColor: '#2196F3',
   },
   toastTitle: {
     fontSize: 16,

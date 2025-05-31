@@ -6,20 +6,16 @@ import { Link, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from "react-native";
 
-interface FieldWithDescription {
-  value: string;
-  description: string;
-}
-
-interface NoteWithFields {
+// Simplified note interface without full fields
+interface Note {
   id: number;
-  fields: Record<string, FieldWithDescription>;
+  preview: string; // Just the preview text we need to display
 }
 
 export default function FlashcardList() {
   const { deck } = useLocalSearchParams<{ deck: string }>();
-  const { getNotes, getNoteFields } = useAnkiContext();
-  const [notes, setNotes] = useState<NoteWithFields[]>([]);
+  const { getNotes, getNoteFields } = useAnkiContext(); // Need getNoteFields to get preview text
+  const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const textColor = useThemeColor({}, "text");
@@ -30,14 +26,27 @@ export default function FlashcardList() {
       if (!deck) return;
       setLoading(true);
       try {
+        // getNotes returns number[] (IDs only)
         const noteIds = await getNotes(deck);
-        const notesWithFields = await Promise.all(
-          noteIds.map(async (id) => ({
-            id,
-            fields: await getNoteFields(id),
-          }))
+        console.log("🚀 ~ loadNotes ~ noteIds:", noteIds);
+        
+        // Transform note IDs into Note objects with previews
+        const notesWithPreviews = await Promise.all(
+          noteIds.map(async (id) => {
+            const fields = await getNoteFields(id);
+            // Get preview from the first field
+            const firstFieldValue = Object.values(fields)[0]?.value || "Empty note";
+            const preview = firstFieldValue.substring(0, 100) + 
+              (firstFieldValue.length > 100 ? "..." : "");
+            
+            return {
+              id,
+              preview
+            };
+          })
         );
-        setNotes(notesWithFields);
+        
+        setNotes(notesWithPreviews);
       } finally {
         setLoading(false);
       }
@@ -53,18 +62,11 @@ export default function FlashcardList() {
     );
   }
 
-  const renderNotePreview = (fields: Record<string, FieldWithDescription>) => {
-    const firstField = Object.values(fields)[0]?.value || "Empty note";
-    return firstField.substring(0, 100) + (firstField.length > 100 ? "..." : "");
-  };
-
-  const filterNotes = (notes: NoteWithFields[], query: string) => {
+  const filterNotes = (notes: Note[], query: string) => {
     if (!query.trim()) return notes;
     const lowercaseQuery = query.toLowerCase();
     return notes.filter(note => 
-      Object.values(note.fields).some(field => 
-        field.value.toLowerCase().includes(lowercaseQuery)
-      )
+      note.preview.toLowerCase().includes(lowercaseQuery)
     );
   };
 
@@ -109,7 +111,7 @@ export default function FlashcardList() {
           >
             <Pressable style={styles.noteItem}>
               <ThemedText style={styles.notePreview}>
-                {renderNotePreview(item.fields)}
+                {item.preview}
               </ThemedText>
             </Pressable>
           </Link>
