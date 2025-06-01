@@ -38,7 +38,7 @@ export default function NoteEditor() {
   } = useAIInstructions(noteType);
 
   // Animation values
-  const [expandedField, setExpandedField] = useState<string | null>(null);
+  const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   // Load note data and note type
@@ -178,8 +178,11 @@ export default function NoteEditor() {
     );
   }
 
-  const toggleFieldExpansion = (fieldName: string) => {
-    setExpandedField(current => current === fieldName ? null : fieldName);
+  const toggleFieldInstruction = (fieldName: string) => {
+    setExpandedFields(prev => ({
+      ...prev,
+      [fieldName]: !prev[fieldName]
+    }));
   };
 
   return (
@@ -188,160 +191,169 @@ export default function NoteEditor() {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-        <View>
-          <ThemedText style={styles.headerTitle}>Edit Note</ThemedText>
+      {/* Header with title and note type */}
+      <Animated.View 
+        style={[styles.header, { opacity: fadeAnim }]}
+      >
+        <View style={styles.headerRow}>
           <View style={styles.noteTypeBadge}>
             <ThemedText style={styles.noteTypeText}>{noteType}</ThemedText>
           </View>
-        </View>
-        
-        <Pressable
-          style={({ pressed }) => [
-            styles.instructionsToggle,
-            pressed && styles.buttonPressed
-          ]}
-          onPress={() => setShowInstructions(!showInstructions)}
-        >
-          <ThemedText style={styles.instructionsToggleText}>
-            {showInstructions ? 'Hide Instructions' : 'Show Instructions'}
-          </ThemedText>
-          <Ionicons 
-            name={showInstructions ? "chevron-up" : "chevron-down"} 
-            size={20} 
-            color={textColor} 
-          />
-        </Pressable>
-      </Animated.View>
-      
-      {Object.entries(fieldsData).map(([fieldName, field], index) => (
-        <Animated.View 
-          key={fieldName}
-          style={[
-            styles.fieldContainer,
-            {
-              transform: [{ 
-                translateY: fadeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [50 + (index * 20), 0]
-                })
-              }],
-              opacity: fadeAnim
-            }
-          ]}
-        >
-          {/* Field header with expand/collapse action */}
-          <View style={[
-            styles.fieldHeaderContainer,
-            { backgroundColor: '#1a1a1a' }
-          ]}>
-            <View style={styles.fieldTitleRow}>
-              <ThemedText style={styles.fieldTitle}>{fieldName}</ThemedText>
-              <Pressable
-                onPress={() => toggleFieldExpansion(fieldName)}
-                style={({ pressed }) => [
-                  styles.expandButton,
-                  pressed && styles.buttonPressed
-                ]}
-              >
-                <Ionicons 
-                  name={expandedField === fieldName ? "chevron-up" : "chevron-down"}
-                  size={22} 
-                  color={textColor}
-                />
-              </Pressable>
-            </View>
-            {expandedField === fieldName && (
-              <ThemedText style={styles.fieldDescription}>
-                {field.description}
-              </ThemedText>
-            )}
-          </View>
           
-          {/* Field content input */}
-          <TextInput
-            style={[
-              styles.fieldInput,
-              {
-                color: textColor,
-                backgroundColor: backgroundColor,
-                borderColor: borderColor,
-              }
-            ]}
-            multiline
-            value={field.value}
-            onChangeText={(text) => updateField(fieldName, text)}
-            placeholder={`Enter ${field.description.toLowerCase()}...`}
-            placeholderTextColor={`${textColor}80`}
-          />
-          
-          {/* AI instruction section (hidden by default) */}
-          {showInstructions && (
-            <View style={[
-              styles.instructionContainer,
-              { borderColor: borderColor }
-            ]}>
-              <View style={styles.instructionHeaderRow}>
-                <MaterialIcons name="psychology-alt" size={18} color={textColor} />
-                <ThemedText style={styles.instructionLabel}>
-                  AI Instruction Template
-                </ThemedText>
-              </View>
-              
-              <TextInput
-                style={[
-                  styles.instructionInput,
-                  {
-                    color: textColor,
-                    backgroundColor,
-                    borderColor: borderColor,
-                  }
-                ]}
-                multiline
-                value={getInstruction(fieldName)}
-                onChangeText={(text) => saveInstruction(fieldName, text)}
-                placeholder={`Enter instruction for generating ${fieldName.toLowerCase()}...`}
-                placeholderTextColor={`${textColor}80`}
-              />
-              
-              <View style={styles.instructionNoteContainer}>
-                <Ionicons name="information-circle-outline" size={16} color={textColor + "99"} />
-                <ThemedText style={styles.instructionNote}>
-                  This instruction template applies to all "{fieldName}" fields in "{noteType}" notes.
-                </ThemedText>
-              </View>
-            </View>
-          )}
-          
-          {/* Generate button */}
           <Pressable
             style={({ pressed }) => [
-              styles.generateButton,
-              isGenerating[fieldName] && styles.generateButtonDisabled,
-              pressed && !isGenerating[fieldName] && styles.generateButtonPressed,
+              styles.instructionsToggle,
+              pressed && styles.buttonPressed
             ]}
-            onPress={() => generateWithAI(fieldName)}
-            disabled={isGenerating[fieldName]}
-            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+            onPress={() => setShowInstructions(!showInstructions)}
           >
-            {isGenerating[fieldName] ? (
-              <View style={styles.generatingContainer}>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-                <ThemedText style={styles.generatingText}>
-                  Generating...
-                </ThemedText>
+            <ThemedText style={styles.instructionsToggleText}>
+              {showInstructions ? 'Hide All Instructions' : 'Show All Instructions'}
+            </ThemedText>
+            <Ionicons 
+              name={showInstructions ? "chevron-up" : "chevron-down"} 
+              size={18} 
+              color="#64dd17" 
+            />
+          </Pressable>
+        </View>
+      </Animated.View>
+      
+      {/* Fields listing */}
+      {Object.entries(fieldsData).map(([fieldName, field], index) => {
+        const isExpanded = expandedFields[fieldName] || showInstructions;
+        
+        return (
+          <Animated.View 
+            key={fieldName}
+            style={[
+              styles.fieldContainer,
+              {
+                transform: [{ 
+                  translateY: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [50 + (index * 20), 0]
+                  })
+                }],
+                opacity: fadeAnim
+              }
+            ]}
+          >
+            {/* Field header with expand/collapse action */}
+            <View style={[
+              styles.fieldHeaderContainer,
+              isExpanded && styles.fieldHeaderExpanded
+            ]}>
+              <View style={styles.fieldTitleRow}>
+                <View style={styles.fieldTitleWrapper}>
+                  <ThemedText style={styles.fieldTitle}>{fieldName}</ThemedText>
+                </View>
+                <Pressable
+                  onPress={() => toggleFieldInstruction(fieldName)}
+                  style={({ pressed }) => [
+                    styles.expandButton,
+                    pressed && styles.buttonPressed
+                  ]}
+                >
+                  <View style={[
+                    styles.expandButtonContainer, 
+                    isExpanded && styles.expandButtonActive
+                  ]}>
+                    <Ionicons 
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={20} 
+                      color={isExpanded ? "#64dd17" : textColor + "CC"}
+                    />
+                  </View>
+                </Pressable>
               </View>
-            ) : (
-              <View style={styles.generateButtonContent}>
-                <Ionicons name="flash" size={18} color="#FFFFFF" />
-                <ThemedText style={styles.generateButtonText}>
-                  Generate with AI
-                </ThemedText>
+            </View>
+            
+            {/* Field content input */}
+            <TextInput
+              style={[
+                styles.fieldInput,
+                {
+                  color: textColor,
+                  backgroundColor: backgroundColor === '#000' ? '#0a0a0a' : backgroundColor,
+                  borderColor: borderColor,
+                }
+              ]}
+              multiline
+              value={field.value}
+              onChangeText={(text) => {
+                const fieldValue = fieldsData[fieldName]?.value || '';
+                updateField(fieldName, text.substring(fieldValue.length));
+              }}
+              placeholder={`Enter ${fieldName.toLowerCase()}...`}
+              placeholderTextColor={`${textColor}60`}
+            />
+            
+            {/* AI instruction section */}
+            {isExpanded && (
+              <View style={styles.instructionContainer}>
+                <View style={styles.instructionHeaderRow}>
+                  <MaterialIcons name="psychology-alt" size={18} color="#64dd17" />
+                  <ThemedText style={styles.instructionLabel}>
+                    AI Template
+                  </ThemedText>
+                </View>
+                
+                <TextInput
+                  style={[
+                    styles.instructionInput,
+                    {
+                      color: textColor,
+                      backgroundColor: backgroundColor === '#000' ? '#111' : backgroundColor,
+                      borderColor: "#64dd17" + "40",
+                    }
+                  ]}
+                  multiline
+                  value={getInstruction(fieldName)}
+                  onChangeText={(text) => saveInstruction(fieldName, text)}
+                  placeholder={`How should AI generate this ${fieldName.toLowerCase()}?`}
+                  placeholderTextColor={`${textColor}60`}
+                />
+                
+                <View style={styles.instructionNoteContainer}>
+                  <Ionicons name="information-circle-outline" style={styles.instructionNoteIcon} size={16} color="#64dd17" />
+                  <ThemedText style={styles.instructionNote}>
+                    This template applies to the "{fieldName}" field of "{noteType}" note type.
+                  </ThemedText>
+                </View>
               </View>
             )}
-          </Pressable>
-        </Animated.View>
-      ))}
+            
+            {/* Generate button */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.generateButton,
+                isGenerating[fieldName] && styles.generateButtonDisabled,
+                pressed && !isGenerating[fieldName] && styles.generateButtonPressed,
+              ]}
+              onPress={() => generateWithAI(fieldName)}
+              disabled={isGenerating[fieldName]}
+              android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+            >
+              {isGenerating[fieldName] ? (
+                <View style={styles.generatingContainer}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ThemedText style={styles.generatingText}>
+                    Generating...
+                  </ThemedText>
+                </View>
+              ) : (
+                <View style={styles.generateButtonContent}>
+                  <MaterialIcons name="auto-awesome" size={20} color="#FFFFFF" />
+                  <ThemedText style={styles.generateButtonText}>
+                  Generate with AI
+                  </ThemedText>
+                </View>
+              )}
+            </Pressable>
+          </Animated.View>
+        );
+      })}
       
       {/* Save button */}
       <Pressable 
@@ -351,7 +363,7 @@ export default function NoteEditor() {
         ]}
         onPress={saveNote}
       >
-        <Ionicons name="save-outline" size={20} color="#FFFFFF" />
+        <Ionicons name="save-outline" size={22} color="#FFFFFF" />
         <ThemedText style={styles.saveButtonText}>Save Changes</ThemedText>
       </Pressable>
       
@@ -380,94 +392,118 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 24,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 16,
+    color: '#fff',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   noteTypeBadge: {
     backgroundColor: '#222',
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    alignSelf: 'flex-start',
+    paddingVertical: 6,
   },
   noteTypeText: {
-    fontSize: 12,
+    fontSize: 14,
     opacity: 0.8,
   },
   instructionsToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#222',
+    backgroundColor: 'rgba(100, 221, 23, 0.15)',
     borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   instructionsToggleText: {
     marginRight: 6,
     fontSize: 14,
+    color: '#64dd17',
+    fontWeight: '500',
   },
   fieldContainer: {
     marginBottom: 24,
     borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: '#111',
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+    elevation: 6,
   },
   fieldHeaderContainer: {
-    padding: 16,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
+    backgroundColor: '#1a1a1a',
+  },
+  fieldHeaderPressable: {
+    padding: 16,
+  },
+  fieldHeaderExpanded: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(100, 221, 23, 0.3)',
   },
   fieldTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  fieldTitleWrapper: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   fieldTitle: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  fieldDescription: {
-    marginTop: 4,
-    fontSize: 14,
-    opacity: 0.7,
-    fontStyle: 'italic',
+  expandButtonContainer: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  expandButtonActive: {
+    backgroundColor: 'rgba(100, 221, 23, 0.15)',
   },
   expandButton: {
-    padding: 4,
+    // padding: 4,
   },
   fieldInput: {
     borderWidth: 1,
     padding: 16,
-    minHeight: 100,
+    minHeight: 60,
     textAlignVertical: 'top',
     fontSize: 16,
-    borderTopWidth: 0,
+    lineHeight: 24,
   },
   instructionContainer: {
     padding: 16,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(100, 221, 23, 0.2)',
+    backgroundColor: 'rgba(100, 221, 23, 0.05)',
   },
   instructionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   instructionLabel: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     marginLeft: 8,
+    color: '#64dd17',
   },
   instructionInput: {
     borderWidth: 1,
@@ -476,11 +512,18 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
     fontSize: 15,
+    lineHeight: 22,
   },
   instructionNoteContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
+    alignItems: 'flex-start',
+    marginTop: 0,
+    paddingTop: 8,
+  },
+  instructionNoteIcon: {
+    marginTop: 3,
+    marginRight: 0,
+    opacity: 0.8,
   },
   instructionNote: {
     fontSize: 13,
@@ -527,9 +570,14 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8,
     flexDirection: 'row',
     justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
   saveButtonPressed: {
     backgroundColor: '#2da44e',

@@ -84,10 +84,12 @@ export default function NoteList() {
 
   return (
     <View style={styles.container}>
+      {/* Header with deck name and stats */}
       <View style={styles.header}>
-        <View style={styles.deckInfoRow}>
-          <ThemedText style={styles.deckName}>{deck} Deck</ThemedText>
-        </View>
+        <ThemedText style={styles.headerTitle}>
+          {deck} 
+          <ThemedText style={styles.notesCountText}> • {notes.length} notes</ThemedText>
+        </ThemedText>
       </View>
 
       <View style={styles.searchContainer}>
@@ -164,9 +166,13 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 4,
+    // marginBottom: 4,
+  },
+  notesCountText: {
+    fontSize: 16,
+    opacity: 0.7,
   },
   deckInfoRow: {
     flexDirection: 'row',

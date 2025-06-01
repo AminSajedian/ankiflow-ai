@@ -112,31 +112,41 @@ export default function DeckList() {
           }]
         }}
       >
-        <Pressable
-          style={({ pressed }) => [
-            styles.deckItem,
-            { marginLeft: level * 16 + (level > 0 ? 8 : 0) },
-            pressed && styles.deckItemPressed
+        <View
+          style={[
+            styles.deckItemContainer,
+            { marginLeft: level * 16 + (level > 0 ? 8 : 0) }
           ]}
-          android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
-          onPress={() => handleDeckPress(item, isParent)}
         >
-          <View style={styles.deckItemContent}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.deckItem,
+              pressed && styles.deckItemPressed
+            ]}
+            android_ripple={{
+              color: 'rgba(255,255,255,0.1)',
+              borderless: false,
+              foreground: true
+            }}
+            onPress={() => handleDeckPress(item, isParent)}
+          >
+            <View style={styles.deckItemContent}>
 
-            <ThemedText style={styles.deckTitle} numberOfLines={1}>
-              {displayName}
-            </ThemedText>
+              <ThemedText style={styles.deckTitle} numberOfLines={1}>
+                {displayName}
+              </ThemedText>
 
-            {isParent && (
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color="#fff"
-                style={styles.chevron}
-              />
-            )}
-          </View>
-        </Pressable>
+              {isParent && (
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color="#fff"
+                  style={styles.chevron}
+                />
+              )}
+            </View>
+          </Pressable>
+        </View>
       </Animated.View>
     );
   };
@@ -214,35 +224,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
-    // paddingHorizontal: 16,    
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
   },
   headerButton: {
-    marginRight: -8,
-    width: 48,
-    height: 48,
+    marginRight: -6,
+    width: 50,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
   },
   listContent: {
     paddingBottom: 24,
     paddingTop: 0,
     paddingHorizontal: 16,
   },
-  deckItem: {
-    marginVertical: 6,  // This adds margin on both left AND right sides
-    marginLeft: 16,
-    marginRight: 0,  // Remove right margin
+  deckItemContainer: {
+    marginVertical: 6,
+    marginRight: 0,
     borderRadius: 12,
+    overflow: 'hidden', // This ensures the ripple effect stays within borders
+  },
+  deckItem: {
     backgroundColor: '#1a1a1a',
-    overflow: 'hidden',
+    width: '100%', // Ensure the pressable takes full width
   },
   deckItemPressed: {
-    borderRadius: 12,
     backgroundColor: '#252525',
   },
   deckItemContent: {
