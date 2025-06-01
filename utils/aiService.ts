@@ -2,14 +2,14 @@ import { GoogleGenAI } from "@google/genai";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from "react-native-toast-message";
 
-// API key storage key
-const API_KEY_STORAGE_KEY = 'gemini_api_key';
+// AI Api Key Identifier
+const AI_API_KEY_IDENTIFIER = 'gemini_api_key';
 
 // Get API key from AsyncStorage only
 export const getApiKey = async (): Promise<string> => {
   try {
     // Only check for a stored API key, no environment variable fallback
-    const storedKey = await AsyncStorage.getItem(API_KEY_STORAGE_KEY);
+    const storedKey = await AsyncStorage.getItem(AI_API_KEY_IDENTIFIER);
     return storedKey || "";
   } catch (error) {
     console.error('Error getting API key:', error);
@@ -20,7 +20,7 @@ export const getApiKey = async (): Promise<string> => {
 // Save API key to AsyncStorage
 export const saveApiKey = async (apiKey: string): Promise<void> => {
   try {
-    await AsyncStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+    await AsyncStorage.setItem(AI_API_KEY_IDENTIFIER, apiKey);
   } catch (error) {
     console.error('Error saving API key:', error);
     throw error;
@@ -115,7 +115,7 @@ export const generateFieldContent = async (prompt: string): Promise<string | nul
       contents: enhancedPrompt,
     });
 
-    console.log("🚀 ~ generateFieldContent ~ response.text:", response.text);
+    console.log("🚀 ~ generateFieldContent ~ response:", response.text);
     return response.text || null;
   } catch (error) {
     console.error("Error generating content:", error);
