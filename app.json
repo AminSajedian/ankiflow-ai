@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ankiflow-ai",
-    "slug": "ankiflow-ai",
+    "name": "AnkiFlow-AI",
+    "slug": "AnkiFlow-AI",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -57,8 +57,7 @@
       "router": {},
       "eas": {
         "projectId": "770dd861-42a5-45a0-a382-2e8386c4333a"
-      },
-      "environmentVariables": ["EXPO_PUBLIC_GEMINI_API_KEY"]
+      }
     },
     "developmentClient": {
       "silentLaunch": true
