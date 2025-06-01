@@ -4,7 +4,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useAnkiContext } from "@/providers/AnkiProvider";
 import { generateContent } from "@/utils/aiService";
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import Toast from 'react-native-toast-message';
@@ -158,7 +158,7 @@ export default function NoteEditor() {
       });
     }
   };
-
+  
   // Animation when component mounts
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -191,7 +191,30 @@ export default function NoteEditor() {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header with title and note type */}
+      {/* Add Stack.Screen with save button in header */}
+      <Stack.Screen
+        options={{
+          title: noteType || "Edit Note",
+          headerStyle: {
+            backgroundColor: '#121212',
+          },
+          headerTintColor: '#fff',
+          headerRight: () => (
+            <Pressable
+              onPress={saveNote}
+              style={({ pressed }) => [
+                styles.headerSaveButton,
+                pressed && { opacity: 0.7 }
+              ]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="save-outline" size={24} color="#34C759" />
+            </Pressable>
+          ),
+        }}
+      />
+      
+      {/* Header with note type and instructions toggle */}
       <Animated.View 
         style={[styles.header, { opacity: fadeAnim }]}
       >
@@ -355,18 +378,6 @@ export default function NoteEditor() {
         );
       })}
       
-      {/* Save button */}
-      <Pressable 
-        style={({ pressed }) => [
-          styles.saveButton,
-          pressed && styles.saveButtonPressed
-        ]}
-        onPress={saveNote}
-      >
-        <Ionicons name="save-outline" size={22} color="#FFFFFF" />
-        <ThemedText style={styles.saveButtonText}>Save Changes</ThemedText>
-      </Pressable>
-      
       <Toast />
     </ScrollView>
   );
@@ -391,7 +402,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   headerTitle: {
     fontSize: 28,
@@ -400,8 +411,8 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   headerRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
+    flexDirection: 'row',
     alignItems: 'center',
   },
   noteTypeBadge: {
@@ -565,28 +576,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontWeight: '500',
   },
-  saveButton: {
-    backgroundColor: '#34C759',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  saveButtonPressed: {
-    backgroundColor: '#2da44e',
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 8,
+  headerSaveButton: {
+    padding: 8,
+    marginRight: 0,
   },
   buttonPressed: {
     opacity: 0.7,
