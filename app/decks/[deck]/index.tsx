@@ -4,7 +4,7 @@ import { useAnkiContext } from "@/providers/AnkiProvider";
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 // Simplified note interface without full fields
 interface Note {
@@ -12,7 +12,7 @@ interface Note {
   preview: string; // Just the preview text we need to display
 }
 
-export default function FlashcardList() {
+export default function NoteList() {
   const { deck } = useLocalSearchParams<{ deck: string }>();
   const { getNotes, getNoteFields } = useAnkiContext(); // Need getNoteFields to get preview text
   const [notes, setNotes] = useState<Note[]>([]);
@@ -20,6 +20,9 @@ export default function FlashcardList() {
   const [searchQuery, setSearchQuery] = useState('');
   const textColor = useThemeColor({}, "text");
   const backgroundColor = useThemeColor({}, "background");
+
+  // For fade-in animation of cards
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     async function loadNotes() {
@@ -52,7 +55,14 @@ export default function FlashcardList() {
       }
     }
     loadNotes();
-  }, [deck, getNotes, getNoteFields]);
+    
+    // Start fade-in animation when component mounts
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, [deck, getNotes, getNoteFields, fadeAnim]);
 
   if (loading) {
     return (
@@ -74,49 +84,71 @@ export default function FlashcardList() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={[
-            styles.searchInput,
-            {
-              color: textColor,
-              backgroundColor: backgroundColor,
-              borderColor: textColor,
-            }
-          ]}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search flashcards..."
-          placeholderTextColor={textColor + "80"}
-        />
-        {searchQuery.length > 0 && (
-          <Pressable
-            style={styles.clearButton}
-            onPress={() => setSearchQuery('')}
-          >
-            <Ionicons name="close-circle" size={20} color={textColor} />
-          </Pressable>
-        )}
+      <View style={styles.header}>
+        <View style={styles.deckInfoRow}>
+          <ThemedText style={styles.deckName}>{deck} Deck</ThemedText>
+        </View>
       </View>
-      <FlatList
-        data={filteredNotes}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <Link
-            href={{
-              pathname: "/decks/[deck]/[noteId]",
-              params: { deck, noteId: item.id.toString() },
-            }}
-            asChild
-          >
-            <Pressable style={styles.noteItem}>
-              <ThemedText style={styles.notePreview}>
-                {item.preview}
-              </ThemedText>
+
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputWrapper}>
+          <Ionicons name="search" size={20} color={textColor + "80"} style={styles.searchIcon} />
+          <TextInput
+            style={[
+              styles.searchInput,
+              { color: textColor }
+            ]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search notes..."
+            placeholderTextColor={textColor + "60"}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable
+              style={styles.clearButton}
+              onPress={() => setSearchQuery('')}
+            >
+              <Ionicons name="close-circle" size={20} color={textColor + "80"} />
             </Pressable>
-          </Link>
-        )}
-      />
+          )}
+        </View>
+      </View>
+
+      {filteredNotes.length === 0 ? (
+        <View style={styles.emptyState}>
+          <ThemedText style={styles.emptyStateText}>
+            {searchQuery ? "No matching notes found" : "No notes in this deck"}
+          </ThemedText>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredNotes}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <Link
+              href={{
+                pathname: "/decks/[deck]/[noteId]",
+                params: { deck, noteId: item.id.toString() },
+              }}
+              asChild
+            >
+              <Pressable>
+                {({ pressed }) => (
+                  <View style={[
+                    styles.noteItem,
+                    pressed && styles.noteItemPressed
+                  ]}>
+                    <ThemedText style={styles.notePreview}>
+                      {item.preview}
+                    </ThemedText>
+                    <Ionicons name="chevron-forward" size={20} color={textColor + "60"} />
+                  </View>
+                )}
+              </Pressable>
+            </Link>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -126,32 +158,87 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  deckInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  deckCount: {
+    fontSize: 16,
+  },
+  separator: {
+    width: 8,
+    height: 16,
+    backgroundColor: '#64dd17', // Green color from screenshot
+    marginHorizontal: 8,
+  },
+  deckName: {
+    fontSize: 16,
+    opacity: 0.7,
+  },
   searchContainer: {
-    margin: 16,
-    position: 'relative',
+    marginHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111',
+    borderRadius: 24,
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
+    flex: 1,
     fontSize: 16,
-    paddingRight: 40, // Make room for the clear button
   },
   clearButton: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: [{ translateY: -10 }],
+    padding: 4,
   },
   noteItem: {
-    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderColor: "#333",
-    backgroundColor: "#1a1a1a",
+    borderBottomColor: '#222',
+    backgroundColor: '#111',
+    marginBottom: 1,
+  },
+  noteItemPressed: {
+    backgroundColor: '#222',
   },
   notePreview: {
     fontSize: 16,
-    color: '#fff',
+    flex: 1,
+    marginRight: 8,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    opacity: 0.6,
+    textAlign: 'center',
   },
   centered: {
     flex: 1,

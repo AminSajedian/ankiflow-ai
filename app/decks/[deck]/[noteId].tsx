@@ -3,10 +3,10 @@ import { useAIInstructions } from "@/hooks/useAIInstructions";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useAnkiContext } from "@/providers/AnkiProvider";
 import { generateContent } from "@/utils/aiService";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import Toast from 'react-native-toast-message';
 
 // Define interfaces
@@ -36,6 +36,10 @@ export default function NoteEditor() {
     getInstruction,
     saveInstruction
   } = useAIInstructions(noteType);
+
+  // Animation values
+  const [expandedField, setExpandedField] = useState<string | null>(null);
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   // Load note data and note type
   useEffect(() => {
@@ -155,27 +159,52 @@ export default function NoteEditor() {
     }
   };
 
+  // Animation when component mounts
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
   // Show loading if data is being fetched
   if (loading || instructionsLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#007AFF" />
+        <ThemedText style={styles.loadingText}>Loading note...</ThemedText>
       </View>
     );
   }
 
+  const toggleFieldExpansion = (fieldName: string) => {
+    setExpandedField(current => current === fieldName ? null : fieldName);
+  };
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Edit Flashcard</ThemedText>
-        <ThemedText style={styles.noteTypeText}>Note type: {noteType}</ThemedText>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+        <View>
+          <ThemedText style={styles.headerTitle}>Edit Note</ThemedText>
+          <View style={styles.noteTypeBadge}>
+            <ThemedText style={styles.noteTypeText}>{noteType}</ThemedText>
+          </View>
+        </View>
         
         <Pressable
-          style={styles.instructionsToggle}
+          style={({ pressed }) => [
+            styles.instructionsToggle,
+            pressed && styles.buttonPressed
+          ]}
           onPress={() => setShowInstructions(!showInstructions)}
         >
           <ThemedText style={styles.instructionsToggleText}>
-            {showInstructions ? 'Hide All Field Instructions' : 'Show All Field Instructions'}
+            {showInstructions ? 'Hide Instructions' : 'Show Instructions'}
           </ThemedText>
           <Ionicons 
             name={showInstructions ? "chevron-up" : "chevron-down"} 
@@ -183,13 +212,50 @@ export default function NoteEditor() {
             color={textColor} 
           />
         </Pressable>
-      </View>
+      </Animated.View>
       
-      {Object.entries(fieldsData).map(([fieldName, field]) => (
-        <View key={fieldName} style={styles.fieldContainer}>
-          {/* Field title/header */}
-          <View style={styles.fieldHeaderContainer}>
-            <ThemedText style={styles.fieldTitle}>{fieldName}</ThemedText>
+      {Object.entries(fieldsData).map(([fieldName, field], index) => (
+        <Animated.View 
+          key={fieldName}
+          style={[
+            styles.fieldContainer,
+            {
+              transform: [{ 
+                translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [50 + (index * 20), 0]
+                })
+              }],
+              opacity: fadeAnim
+            }
+          ]}
+        >
+          {/* Field header with expand/collapse action */}
+          <View style={[
+            styles.fieldHeaderContainer,
+            { backgroundColor: '#1a1a1a' }
+          ]}>
+            <View style={styles.fieldTitleRow}>
+              <ThemedText style={styles.fieldTitle}>{fieldName}</ThemedText>
+              <Pressable
+                onPress={() => toggleFieldExpansion(fieldName)}
+                style={({ pressed }) => [
+                  styles.expandButton,
+                  pressed && styles.buttonPressed
+                ]}
+              >
+                <Ionicons 
+                  name={expandedField === fieldName ? "chevron-up" : "chevron-down"}
+                  size={22} 
+                  color={textColor}
+                />
+              </Pressable>
+            </View>
+            {expandedField === fieldName && (
+              <ThemedText style={styles.fieldDescription}>
+                {field.description}
+              </ThemedText>
+            )}
           </View>
           
           {/* Field content input */}
@@ -215,29 +281,35 @@ export default function NoteEditor() {
               styles.instructionContainer,
               { borderColor: borderColor }
             ]}>
-              <ThemedText style={styles.instructionLabel}>
-                AI Instruction for all {field.description} fields in {noteType}
-              </ThemedText>
+              <View style={styles.instructionHeaderRow}>
+                <MaterialIcons name="psychology-alt" size={18} color={textColor} />
+                <ThemedText style={styles.instructionLabel}>
+                  AI Instruction Template
+                </ThemedText>
+              </View>
               
               <TextInput
                 style={[
                   styles.instructionInput,
                   {
                     color: textColor,
-                    backgroundColor: backgroundColor,
+                    backgroundColor,
                     borderColor: borderColor,
                   }
                 ]}
                 multiline
                 value={getInstruction(fieldName)}
                 onChangeText={(text) => saveInstruction(fieldName, text)}
-                placeholder={`Enter instruction for generating ${field.description.toLowerCase()}...`}
+                placeholder={`Enter instruction for generating ${fieldName.toLowerCase()}...`}
                 placeholderTextColor={`${textColor}80`}
               />
               
-              <ThemedText style={styles.instructionNote}>
-                This instruction applies to "{fieldName}" field of all notes with "{noteType}" type.
-              </ThemedText>
+              <View style={styles.instructionNoteContainer}>
+                <Ionicons name="information-circle-outline" size={16} color={textColor + "99"} />
+                <ThemedText style={styles.instructionNote}>
+                  This instruction template applies to all "{fieldName}" fields in "{noteType}" notes.
+                </ThemedText>
+              </View>
             </View>
           )}
           
@@ -246,36 +318,40 @@ export default function NoteEditor() {
             style={({ pressed }) => [
               styles.generateButton,
               isGenerating[fieldName] && styles.generateButtonDisabled,
-              pressed && styles.generateButtonPressed, // Add visual feedback when pressed
+              pressed && !isGenerating[fieldName] && styles.generateButtonPressed,
             ]}
-            onPress={() => {
-              console.log("Generate button pressed for field:", fieldName);
-              generateWithAI(fieldName);
-            }}
+            onPress={() => generateWithAI(fieldName)}
             disabled={isGenerating[fieldName]}
-            // Add extra properties to ensure it's touchable
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
           >
             {isGenerating[fieldName] ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <View style={styles.generatingContainer}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ThemedText style={styles.generatingText}>
+                  Generating...
+                </ThemedText>
+              </View>
             ) : (
-              <>
-                <Ionicons name="flash-outline" size={18} color="#FFFFFF" />
+              <View style={styles.generateButtonContent}>
+                <Ionicons name="flash" size={18} color="#FFFFFF" />
                 <ThemedText style={styles.generateButtonText}>
                   Generate with AI
                 </ThemedText>
-              </>
+              </View>
             )}
           </Pressable>
-        </View>
+        </Animated.View>
       ))}
       
       {/* Save button */}
       <Pressable 
-        style={styles.saveButton}
+        style={({ pressed }) => [
+          styles.saveButton,
+          pressed && styles.saveButtonPressed
+        ]}
         onPress={saveNote}
       >
+        <Ionicons name="save-outline" size={20} color="#FFFFFF" />
         <ThemedText style={styles.saveButtonText}>Save Changes</ThemedText>
       </Pressable>
       
@@ -287,6 +363,7 @@ export default function NoteEditor() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000',
   },
   contentContainer: {
     padding: 16,
@@ -297,105 +374,173 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    marginTop: 12,
+    opacity: 0.7,
+  },
   header: {
-    marginBottom: 20,
+    marginBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  noteTypeBadge: {
+    backgroundColor: '#222',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
   },
   noteTypeText: {
-    fontSize: 14,
-    marginBottom: 12,
-    opacity: 0.7,
+    fontSize: 12,
+    opacity: 0.8,
   },
   instructionsToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 8,
+    backgroundColor: '#222',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   instructionsToggleText: {
     marginRight: 6,
+    fontSize: 14,
   },
   fieldContainer: {
     marginBottom: 24,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   fieldHeaderContainer: {
-    backgroundColor: '#1a1a1a',
-    padding: 12,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    padding: 16,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  fieldTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   fieldTitle: {
     fontSize: 18,
-    fontWeight: '500',
+    fontWeight: 'bold',
+  },
+  fieldDescription: {
+    marginTop: 4,
+    fontSize: 14,
+    opacity: 0.7,
+    fontStyle: 'italic',
+  },
+  expandButton: {
+    padding: 4,
   },
   fieldInput: {
     borderWidth: 1,
-    padding: 12,
-    minHeight: 60,
+    padding: 16,
+    minHeight: 100,
     textAlignVertical: 'top',
     fontSize: 16,
     borderTopWidth: 0,
   },
   instructionContainer: {
-    padding: 12,
+    padding: 16,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    backgroundColor: '#1a1a1a30',
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+  },
+  instructionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   instructionLabel: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
-    marginBottom: 8,
+    marginLeft: 8,
   },
   instructionInput: {
     borderWidth: 1,
-    borderRadius: 4,
-    padding: 8,
+    borderRadius: 8,
+    padding: 12,
     minHeight: 80,
     textAlignVertical: 'top',
+    fontSize: 15,
+  },
+  instructionNoteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
   },
   instructionNote: {
-    fontSize: 12,
+    fontSize: 13,
     fontStyle: 'italic',
-    marginTop: 6,
     opacity: 0.7,
+    marginLeft: 6,
+    flex: 1,
   },
   generateButton: {
     backgroundColor: '#007AFF',
+    padding: 16,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  generateButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    // Make sure it's not hidden or has opacity: 0
-    opacity: 1,
-    zIndex: 1,
   },
   generateButtonDisabled: {
-    backgroundColor: '#007AFF80',
+    backgroundColor: 'rgba(0, 122, 255, 0.5)',
   },
   generateButtonPressed: {
-    backgroundColor: '#0056b3', // Darker color when pressed
+    backgroundColor: '#0056b3',
   },
   generateButtonText: {
     color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  generatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  generatingText: {
+    color: 'white',
+    marginLeft: 8,
     fontWeight: '500',
-    marginLeft: 6,
   },
   saveButton: {
     backgroundColor: '#34C759',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  saveButtonPressed: {
+    backgroundColor: '#2da44e',
   },
   saveButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
+    marginLeft: 8,
+  },
+  buttonPressed: {
+    opacity: 0.7,
   }
 });

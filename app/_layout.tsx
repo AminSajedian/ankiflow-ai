@@ -38,33 +38,20 @@ export default function AnkiLayout() {
                 name="decks/index"
                 options={{
                   title: "Your Decks",
-                  // headerRight: () => (
-                  //   <Link href="/test/ankidroid" asChild>
-                  //     <TouchableOpacity>
-                  //       <ThemedText style={styles.headerRight}>AnkiDroidTest</ThemedText>
-                  //     </TouchableOpacity>
-                  //   </Link>
-                  // ),
                 }}
               />
               <Stack.Screen
                 name="decks/[deck]/index"
                 options={{
-                  title: "Flashcards",
+                  title: "Notes",
                 }}
               />
               <Stack.Screen
                 name="decks/[deck]/[noteId]"
                 options={{
-                  title: "AI Flashcard Editor",
+                  title: "AI Note Editor",
                 }}
               />
-              {/* <Stack.Screen
-                name="test/ankidroid"
-                options={{
-                  title: "AnkiDroid Test",
-                }}
-              /> */}
               <Stack.Screen
                 name="+not-found"
                 options={{
@@ -106,12 +93,6 @@ export default function AnkiLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerRight: {
-    marginRight: 16,
-    fontSize: 16,
-    fontWeight: "500",
-    color: '#007AFF', // Make it look like a link
   },
   toast: {
     padding: 16,
