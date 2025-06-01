@@ -32,6 +32,7 @@ export const generateContent = async (
   targetFieldName: string,
   firstFieldValue: string,
   fieldInstruction: string,
+  currentFieldValue: string = "" // Add parameter for current field value
 ): Promise<string> => {
   try {
     const apiKey = await getApiKey();
@@ -66,7 +67,13 @@ export const generateContent = async (
       throw new Error("Empty response from Gemini API");
     }
 
-    return response.text;
+    // Add separator if there's existing content
+    const generatedContent = response.text;
+    if (currentFieldValue && currentFieldValue.trim() !== "") {
+      return currentFieldValue + "\n------\n" + generatedContent;
+    }
+    
+    return generatedContent;
   } catch (error) {
     console.error("Error generating content:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";

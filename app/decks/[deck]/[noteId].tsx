@@ -72,21 +72,15 @@ export default function NoteEditor() {
     loadNote();
   }, [noteId, getNoteFields, getNoteType]);
 
-  // Handle updating field value - append new content with a separator
+  // Simplified updateField function - no longer adds separators
   const updateField = (fieldName: string, value: string) => {
-    setFieldsData(prev => {
-      const currentValue = prev[fieldName]?.value || "";
-      // Add the separator (three hyphens) if both current value and new value exist
-      const separator = currentValue && value ? "\n\n---\n\n" : "";
-      
-      return {
-        ...prev,
-        [fieldName]: {
-          ...prev[fieldName],
-          value: currentValue + separator + value
-        }
-      };
-    });
+    setFieldsData(prev => ({
+      ...prev,
+      [fieldName]: {
+        ...prev[fieldName],
+        value: value
+      }
+    }));
   };
 
   // Generate content with AI
@@ -101,15 +95,23 @@ export default function NoteEditor() {
       setIsGenerating(prev => ({ ...prev, [targetFieldName]: true }));
       console.log("Starting generation for field:", targetFieldName);
       
-      // Get the field description
+      // Get the field description and current value
       const firstFieldValue = Object.values(fieldsData)[0]?.value;
+      const currentFieldValue = fieldsData[targetFieldName]?.value || "";
+      
       console.log("🚀 ~ generateWithAI ~ firstFieldValue:", firstFieldValue);
       
       // Call the AI service
-      const content = await generateContent(targetFieldName, firstFieldValue, fieldInstruction);
+      const content = await generateContent(
+        targetFieldName, 
+        firstFieldValue, 
+        fieldInstruction,
+        currentFieldValue // Pass current value to decide if separator is needed
+      );
+      
       console.log("Generation successful, updating field:", targetFieldName);
       
-      // Update the field
+      // Update the field with the returned content (which now includes separator if needed)
       updateField(targetFieldName, content);
       
       Toast.show({
@@ -304,10 +306,7 @@ export default function NoteEditor() {
               ]}
               multiline
               value={field.value}
-              onChangeText={(text) => {
-                const fieldValue = fieldsData[fieldName]?.value || '';
-                updateField(fieldName, text.substring(fieldValue.length));
-              }}
+              onChangeText={(text) => updateField(fieldName, text)} // Direct update without substring
               placeholder={`Enter ${fieldName.toLowerCase()}...`}
               placeholderTextColor={`${textColor}60`}
             />
