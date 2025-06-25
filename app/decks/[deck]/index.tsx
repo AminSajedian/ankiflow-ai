@@ -14,7 +14,7 @@ interface Note {
 
 export default function NoteList() {
   const { deck } = useLocalSearchParams<{ deck: string }>();
-  const { getNotes, getNoteFields } = useAnkiContext(); // Need getNoteFields to get preview text
+  const { getNotes, getNotesFieldsBatch } = useAnkiContext(); // Added getNotesFieldsBatch
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,25 +31,21 @@ export default function NoteList() {
       try {
         // getNotes returns number[] (IDs only)
         const noteIds = await getNotes(deck);
-        // console.log("🚀 ~ loadNotes ~ noteIds:", noteIds);
-        
-        // Transform note IDs into Note objects with previews
-        const notesWithPreviews = await Promise.all(
-          noteIds.map(async (id) => {
-            const fields = await getNoteFields(id);
-            console.log("🚀 ~ loadNotes ~ fields:", fields);
-            // Get preview from the first field
-            const firstFieldValue = Object.values(fields)[0]?.value || "Empty note";
-            const preview = firstFieldValue.substring(0, 100) + 
-              (firstFieldValue.length > 100 ? "..." : "");
-            
-            return {
-              id,
-              preview
-            };
-          })
-        );
-        
+        // Batch fetch all note fields at once
+        const notesFieldsArr = await getNotesFieldsBatch(noteIds);
+
+        // Compose notes with previews
+        const notesWithPreviews = noteIds.map((id, idx) => {
+          const fields = notesFieldsArr[idx] || {};
+          const firstFieldValue = Object.values(fields)[0]?.value || "Empty note";
+          const preview = firstFieldValue.substring(0, 100) +
+            (firstFieldValue.length > 100 ? "..." : "");
+          return {
+            id,
+            preview
+          };
+        });
+
         setNotes(notesWithPreviews);
       } finally {
         setLoading(false);
@@ -63,7 +59,7 @@ export default function NoteList() {
       duration: 800,
       useNativeDriver: true,
     }).start();
-  }, [deck, getNotes, getNoteFields, fadeAnim]);
+  }, [deck, getNotes, getNotesFieldsBatch, fadeAnim]);
 
   if (loading) {
     return (

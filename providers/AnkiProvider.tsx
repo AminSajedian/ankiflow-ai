@@ -37,6 +37,7 @@ interface AnkiContextValue {
   getNoteType: (noteId: number) => Promise<string>;
   getNoteTypeFields: (modelName: string) => Promise<string[]>;
   getAllNoteTypes: () => Promise<NoteType[]>;
+  getNotesFieldsBatch: (noteIds: number[]) => Promise<Record<string, FieldWithDescription>[]>;
 }
 
 const AnkiContext = createContext<AnkiContextValue>({
@@ -48,6 +49,7 @@ const AnkiContext = createContext<AnkiContextValue>({
   getNoteType: async () => '',
   getNoteTypeFields: async () => [],
   getAllNoteTypes: async () => [],
+  getNotesFieldsBatch: async () => [],
 });
 
 export function useAnkiContext() {
@@ -331,6 +333,32 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
     getNoteType,
     getNoteTypeFields,
     getAllNoteTypes,
+    getNotesFieldsBatch: async (noteIds) => {
+      if (!noteIds.length) return [];
+      const modelResult = await ankiRequest<AnkiNoteInfo[]>("notesInfo", {
+        notes: noteIds,
+      });
+      if (!modelResult) return [];
+      return modelResult.map(noteInfo => {
+        const fieldsArray = Object.entries(noteInfo.fields)
+          .map(([key, field]) => ({
+            name: key,
+            value: field.value,
+            order: field.order,
+            description: field.description || ''
+          }))
+          .sort((a, b) => a.order - b.order);
+
+        const fields: Record<string, FieldWithDescription> = {};
+        for (const field of fieldsArray) {
+          fields[field.name] = {
+            value: field.value,
+            description: field.description
+          };
+        }
+        return fields;
+      });
+    },
   };
 
   return (

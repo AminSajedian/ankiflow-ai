@@ -16,7 +16,7 @@ interface FieldWithDescription {
 }
 
 export default function NoteEditor() {
-  const { deck, noteId } = useLocalSearchParams<{ deck: string, noteId: string }>();
+  const { /* deck, */ noteId } = useLocalSearchParams<{ deck: string, noteId: string }>();
   const { getNoteFields, updateNote, getNoteType } = useAnkiContext();
   
   const [fieldsData, setFieldsData] = useState<Record<string, FieldWithDescription>>({});
@@ -340,7 +340,7 @@ export default function NoteEditor() {
                 <View style={styles.instructionNoteContainer}>
                   <Ionicons name="information-circle-outline" style={styles.instructionNoteIcon} size={16} color="#64dd17" />
                   <ThemedText style={styles.instructionNote}>
-                    This template applies to the "{fieldName}" field of "{noteType}" note type.
+                    This template applies to the &quot;{fieldName}&quot; field of &quot;{noteType}&quot; note type.
                   </ThemedText>
                 </View>
               </View>
