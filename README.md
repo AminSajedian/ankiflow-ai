@@ -1,10 +1,8 @@
 # AnkiFlow AI 🧠
 
-## Overview
+# Overview
 
-AnkiFlow AI is a modern flashcard learning application that enhances your study experience with artificial intelligence. Built with React Native and Expo, this app combines spaced repetition learning principles with AI assistance to make your learning more effective and personalized.
-
-The application follows a deck-based organization similar to traditional flashcard apps like Anki, but elevates the experience with AI-powered features that adapt to your learning patterns and help generate better study materials.
+AnkiFlow AI is a modern flashcard learning app built with React Native and Expo. It enhances traditional spaced repetition learning with AI-powered features, such as AI-generated explanations, topic suggestions, and adaptive difficulty. The app supports deck management, web content integration, and progress tracking, all within a mobile-friendly interface. It leverages Google's Generative AI and integrates with Anki/AnkiDroid for seamless flashcard management and study synchronization.
 
 ## Key Features
 

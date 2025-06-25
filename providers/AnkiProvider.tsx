@@ -72,7 +72,7 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
       }
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const res = await fetch(ANKICONNECT_URL, {
         method: 'POST',

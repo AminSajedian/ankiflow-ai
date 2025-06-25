@@ -19,7 +19,7 @@ export default function NoteList() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const textColor = useThemeColor({}, "text");
-  const backgroundColor = useThemeColor({}, "background");
+  // const backgroundColor = useThemeColor({}, "background");
 
   // For fade-in animation of cards
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -31,12 +31,13 @@ export default function NoteList() {
       try {
         // getNotes returns number[] (IDs only)
         const noteIds = await getNotes(deck);
-        console.log("🚀 ~ loadNotes ~ noteIds:", noteIds);
+        // console.log("🚀 ~ loadNotes ~ noteIds:", noteIds);
         
         // Transform note IDs into Note objects with previews
         const notesWithPreviews = await Promise.all(
           noteIds.map(async (id) => {
             const fields = await getNoteFields(id);
+            console.log("🚀 ~ loadNotes ~ fields:", fields);
             // Get preview from the first field
             const firstFieldValue = Object.values(fields)[0]?.value || "Empty note";
             const preview = firstFieldValue.substring(0, 100) + 

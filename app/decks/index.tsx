@@ -6,7 +6,7 @@ import { router, Stack } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Animated, FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import Toast from 'react-native-toast-message';
-import { useAnkiContext } from "../../providers/AnkiProvider";
+import { useAnkiContext } from "@/providers/AnkiProvider";
 
 export default function DeckList() {
   const { getDecks } = useAnkiContext();
