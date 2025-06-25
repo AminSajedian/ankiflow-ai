@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "AnkiFlow-AI",
-    "slug": "AnkiFlow-AI",
+    "name": "AnkiFlow AI",
+    "slug": "ankiflow-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

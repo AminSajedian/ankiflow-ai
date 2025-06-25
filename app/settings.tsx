@@ -4,7 +4,7 @@ import { getApiKey, saveApiKey } from '@/utils/aiService';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 export default function Settings() {
@@ -115,7 +115,10 @@ export default function Settings() {
           
           <ThemedText style={styles.helperText}>
             You need a Gemini API key to use AI features. Get one at{' '}
-            <ThemedText style={styles.link}>
+            <ThemedText
+              style={styles.link}
+              onPress={() => Linking.openURL('https://aistudio.google.com/app/apikey')}
+            >
               https://aistudio.google.com/app/apikey
             </ThemedText>
           </ThemedText>
