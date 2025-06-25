@@ -158,14 +158,14 @@ export default function NoteEditor() {
       Toast.show({
         type: "success",
         text1: "Note saved",
-        position: "top",
+        position: "bottom",
       });
     } catch (error) {
       console.error("Error saving note:", error);
       Toast.show({
         type: "error",
         text1: "Failed to save note",
-        position: "top",
+        position: "bottom",
       });
     }
   };
@@ -213,16 +213,7 @@ export default function NoteEditor() {
             headerTintColor: "#fff",
             headerRight: () => (
               <>
-                <Pressable
-                  onPress={saveNote}
-                  style={({ pressed }) => [
-                    styles.headerSaveButton,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons name="save-outline" size={24} color="#34C759" />
-                </Pressable>
+                {/* Removed save button from header */}
                 <Pressable
                   onPress={() => router.push("/settings")}
                   style={({ pressed }) => [
@@ -424,6 +415,17 @@ export default function NoteEditor() {
           );
         })}
       </ScrollView>
+      {/* FAB Save Button */}
+      <Pressable
+        onPress={saveNote}
+        style={({ pressed }) => [
+          styles.fabSaveButton,
+          pressed && styles.fabSaveButtonPressed,
+        ]}
+        hitSlop={16}
+      >
+        <Ionicons name="save-outline" size={28} color="#fff" />
+      </Pressable>
       <Toast />
     </>
   );
@@ -630,10 +632,31 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   headerButton: {
-    marginRight: -6,
+    marginRight: 0,
     width: 50,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
+  },
+  // --- FAB Save Button styles ---
+  fabSaveButton: {
+    position: "absolute",
+    left: 24,
+    bottom: 32,
+    backgroundColor: "#34C759",
+    borderRadius: 32,
+    width: 56,
+    height: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    zIndex: 100,
+  },
+  fabSaveButtonPressed: {
+    backgroundColor: "#249944",
   },
 });
