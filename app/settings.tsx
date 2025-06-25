@@ -40,7 +40,7 @@ export default function Settings() {
         type: 'error',
         text1: 'API Key Required',
         text2: 'Please enter a valid Gemini API key',
-        position: 'bottom',
+        position: 'top',
       });
       return;
     }
@@ -53,7 +53,7 @@ export default function Settings() {
         type: 'success',
         text1: 'API Key Saved',
         text2: 'Your Gemini API key has been saved',
-        position: 'bottom',
+        position: 'top',
       });
     } catch (error) {
       console.error('Error saving API key:', error);
@@ -61,7 +61,7 @@ export default function Settings() {
         type: 'error',
         text1: 'Error Saving API Key',
         text2: 'Please try again',
-        position: 'bottom',
+        position: 'top',
       });
     } finally {
       setSaving(false);
