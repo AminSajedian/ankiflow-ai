@@ -300,26 +300,41 @@ export default function NoteEditor() {
                         {fieldName}
                       </ThemedText>
                     </View>
-                    <Pressable
-                      onPress={() => toggleFieldInstruction(fieldName)}
-                      style={({ pressed }) => [
-                        styles.expandButton,
-                        pressed && styles.buttonPressed,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.expandButtonContainer,
-                          isExpanded && styles.expandButtonActive,
+                    <View style={styles.fieldTitleActions}>
+                      {/* Clear field icon - use MaterialIcons "highlight-off" for a softer look */}
+                      <Pressable
+                        onPress={() => updateField(fieldName, "")}
+                        style={({ pressed }) => [
+                          styles.clearFieldButton,
+                          pressed && styles.clearFieldButtonPressed,
                         ]}
+                        hitSlop={10}
                       >
-                        <Ionicons
-                          name={isExpanded ? "chevron-up" : "chevron-down"}
-                          size={20}
-                          color={isExpanded ? "#64dd17" : textColor + "CC"}
-                        />
-                      </View>
-                    </Pressable>
+                        <MaterialIcons name="highlight-off" size={22} color="#e57373" />
+                      </Pressable>
+                      {/* Expand/collapse icon */}
+                      <Pressable
+                        onPress={() => toggleFieldInstruction(fieldName)}
+                        style={({ pressed }) => [
+                          styles.expandButton,
+                          pressed && styles.buttonPressed,
+                        ]}
+                        hitSlop={8}
+                      >
+                        <View
+                          style={[
+                            styles.expandButtonContainer,
+                            isExpanded && styles.expandButtonActive,
+                          ]}
+                        >
+                          <Ionicons
+                            name={isExpanded ? "chevron-up" : "chevron-down"}
+                            size={20}
+                            color={isExpanded ? "#64dd17" : textColor + "CC"}
+                          />
+                        </View>
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
 
@@ -531,9 +546,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  fieldTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+  fieldTitleActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6, // more space between icons
+  },
+  clearFieldButton: {
+    marginRight: 2,
+    padding: 4,
+    borderRadius: 16,
+    backgroundColor: "#2d2323",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  clearFieldButtonPressed: {
+    backgroundColor: "#4e2428",
   },
   expandButtonContainer: {
     width: 32,
