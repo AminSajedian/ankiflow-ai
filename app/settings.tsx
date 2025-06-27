@@ -4,7 +4,7 @@ import { getApiKey, saveApiKey } from '@/utils/aiService';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 export default function Settings() {
@@ -69,76 +69,82 @@ export default function Settings() {
   };
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: 'Settings',
-          headerStyle: {
-            backgroundColor: '#1a1a1a',
-          },
-          headerTintColor: '#fff',
-        }}
-      />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+    >
+      <View style={styles.container}>
+        <Stack.Screen
+          options={{
+            title: 'Settings',
+            headerStyle: {
+              backgroundColor: '#1a1a1a',
+            },
+            headerTintColor: '#fff',
+          }}
+        />
 
-      <View style={styles.content}>
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>AI Settings</ThemedText>
-          
-          <ThemedText style={styles.label}>Gemini API Key</ThemedText>
-          <View style={styles.apiKeyContainer}>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  color: textColor,
-                  backgroundColor,
-                  borderColor: textColor + '40',
-                }
-              ]}
-              value={apiKey}
-              onChangeText={setApiKey}
-              placeholder="Enter your Gemini API key"
-              placeholderTextColor={textColor + '80'}
-              secureTextEntry={!isVisible}
-            />
-            <Pressable 
-              style={styles.visibilityButton}
-              onPress={() => setIsVisible(!isVisible)}
-            >
-              <Ionicons 
-                name={isVisible ? 'eye-off' : 'eye'} 
-                size={24} 
-                color={textColor} 
+        <View style={styles.content}>
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>AI Settings</ThemedText>
+            
+            <ThemedText style={styles.label}>Gemini API Key</ThemedText>
+            <View style={styles.apiKeyContainer}>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: textColor,
+                    backgroundColor,
+                    borderColor: textColor + '40',
+                  }
+                ]}
+                value={apiKey}
+                onChangeText={setApiKey}
+                placeholder="Enter your Gemini API key"
+                placeholderTextColor={textColor + '80'}
+                secureTextEntry={!isVisible}
               />
+              <Pressable 
+                style={styles.visibilityButton}
+                onPress={() => setIsVisible(!isVisible)}
+              >
+                <Ionicons 
+                  name={isVisible ? 'eye-off' : 'eye'} 
+                  size={24} 
+                  color={textColor} 
+                />
+              </Pressable>
+            </View>
+            
+            <ThemedText style={styles.helperText}>
+              You need a Gemini API key to use AI features. Get one at{' '}
+              <ThemedText
+                style={styles.link}
+                onPress={() => Linking.openURL('https://aistudio.google.com/app/apikey')}
+              >
+                https://aistudio.google.com/app/apikey
+              </ThemedText>
+            </ThemedText>
+
+            <Pressable
+              style={[styles.saveButton, saving && styles.savingButton]}
+              onPress={handleSave}
+              disabled={saving || loading}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <ThemedText style={styles.saveButtonText}>Save API Key</ThemedText>
+              )}
             </Pressable>
           </View>
-          
-          <ThemedText style={styles.helperText}>
-            You need a Gemini API key to use AI features. Get one at{' '}
-            <ThemedText
-              style={styles.link}
-              onPress={() => Linking.openURL('https://aistudio.google.com/app/apikey')}
-            >
-              https://aistudio.google.com/app/apikey
-            </ThemedText>
-          </ThemedText>
-
-          <Pressable
-            style={[styles.saveButton, saving && styles.savingButton]}
-            onPress={handleSave}
-            disabled={saving || loading}
-          >
-            {saving ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <ThemedText style={styles.saveButtonText}>Save API Key</ThemedText>
-            )}
-          </Pressable>
         </View>
+        
+        <Toast />
       </View>
-      
-      <Toast />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

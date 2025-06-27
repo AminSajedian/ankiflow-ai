@@ -9,6 +9,8 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -200,234 +202,240 @@ export default function NoteEditor() {
 
   return (
     <>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 100} // adjust offset if needed
       >
-        {/* Add Stack.Screen with save button in header */}
-        <Stack.Screen
-          options={{
-            title: noteType || "Edit Note",
-            headerStyle: {
-              backgroundColor: "#121212",
-            },
-            headerTintColor: "#fff",
-            headerRight: () => (
-              <>
-                {/* Removed save button from header */}
-                <Pressable
-                  onPress={() => router.push("/settings")}
-                  style={({ pressed }) => [
-                    styles.headerButton,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <Ionicons name="settings-outline" size={24} color="#fff" />
-                </Pressable>
-              </>
-            ),
-          }}
-        />
-
-        {/* Header with note type and instructions toggle */}
-        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-          <View style={styles.headerRow}>
-            <View style={styles.noteTypeBadge}>
-              <ThemedText style={styles.noteTypeText}>{noteType}</ThemedText>
-            </View>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.instructionsToggle,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={() => setShowInstructions(!showInstructions)}
-            >
-              <ThemedText style={styles.instructionsToggleText}>
-                {showInstructions
-                  ? "Hide All Instructions"
-                  : "Show All Instructions"}
-              </ThemedText>
-              <Ionicons
-                name={showInstructions ? "chevron-up" : "chevron-down"}
-                size={18}
-                color="#64dd17"
-              />
-            </Pressable>
-          </View>
-        </Animated.View>
-
-        {/* Fields listing */}
-        {Object.entries(fieldsData).map(([fieldName, field], index) => {
-          const isExpanded = expandedFields[fieldName] || showInstructions;
-
-          return (
-            <Animated.View
-              key={fieldName}
-              style={[
-                styles.fieldContainer,
-                {
-                  transform: [
-                    {
-                      translateY: fadeAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [50 + index * 20, 0],
-                      }),
-                    },
-                  ],
-                  opacity: fadeAnim,
-                },
-              ]}
-            >
-              {/* Field header with expand/collapse action */}
-              <View
-                style={[
-                  styles.fieldHeaderContainer,
-                  isExpanded && styles.fieldHeaderExpanded,
-                ]}
-              >
-                <View style={styles.fieldTitleRow}>
-                  <View style={styles.fieldTitleWrapper}>
-                    <ThemedText style={styles.fieldTitle}>
-                      {fieldName}
-                    </ThemedText>
-                  </View>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Add Stack.Screen with save button in header */}
+          <Stack.Screen
+            options={{
+              title: noteType || "Edit Note",
+              headerStyle: {
+                backgroundColor: "#121212",
+              },
+              headerTintColor: "#fff",
+              headerRight: () => (
+                <>
+                  {/* Removed save button from header */}
                   <Pressable
-                    onPress={() => toggleFieldInstruction(fieldName)}
+                    onPress={() => router.push("/settings")}
                     style={({ pressed }) => [
-                      styles.expandButton,
-                      pressed && styles.buttonPressed,
+                      styles.headerButton,
+                      pressed && { opacity: 0.7 },
                     ]}
                   >
-                    <View
-                      style={[
-                        styles.expandButtonContainer,
-                        isExpanded && styles.expandButtonActive,
-                      ]}
-                    >
-                      <Ionicons
-                        name={isExpanded ? "chevron-up" : "chevron-down"}
-                        size={20}
-                        color={isExpanded ? "#64dd17" : textColor + "CC"}
-                      />
-                    </View>
+                    <Ionicons name="settings-outline" size={24} color="#fff" />
                   </Pressable>
-                </View>
+                </>
+              ),
+            }}
+          />
+
+          {/* Header with note type and instructions toggle */}
+          <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+            <View style={styles.headerRow}>
+              <View style={styles.noteTypeBadge}>
+                <ThemedText style={styles.noteTypeText}>{noteType}</ThemedText>
               </View>
 
-              {/* Field content input */}
-              <TextInput
-                style={[
-                  styles.fieldInput,
-                  {
-                    color: textColor,
-                    backgroundColor:
-                      backgroundColor === "#000" ? "#0a0a0a" : backgroundColor,
-                    borderColor: borderColor,
-                  },
-                ]}
-                multiline
-                value={field.value}
-                onChangeText={(text) => updateField(fieldName, text)} // Direct update without substring
-                placeholder={`Enter ${fieldName.toLowerCase()}...`}
-                placeholderTextColor={`${textColor}60`}
-              />
-
-              {/* AI instruction section */}
-              {isExpanded && (
-                <View style={styles.instructionContainer}>
-                  <View style={styles.instructionHeaderRow}>
-                    <MaterialIcons
-                      name="psychology-alt"
-                      size={18}
-                      color="#64dd17"
-                    />
-                    <ThemedText style={styles.instructionLabel}>
-                      AI Template
-                    </ThemedText>
-                  </View>
-
-                  <TextInput
-                    style={[
-                      styles.instructionInput,
-                      {
-                        color: textColor,
-                        backgroundColor:
-                          backgroundColor === "#000" ? "#111" : backgroundColor,
-                        borderColor: "#64dd17" + "40",
-                      },
-                    ]}
-                    multiline
-                    value={getInstruction(fieldName)}
-                    onChangeText={(text) => saveInstruction(fieldName, text)}
-                    placeholder={`How should AI generate this ${fieldName.toLowerCase()}?`}
-                    placeholderTextColor={`${textColor}60`}
-                  />
-
-                  <View style={styles.instructionNoteContainer}>
-                    <Ionicons
-                      name="information-circle-outline"
-                      style={styles.instructionNoteIcon}
-                      size={16}
-                      color="#64dd17"
-                    />
-                    <ThemedText style={styles.instructionNote}>
-                      This template applies to the &quot;{fieldName}&quot; field
-                      of &quot;{noteType}&quot; note type.
-                    </ThemedText>
-                  </View>
-                </View>
-              )}
-
-              {/* Generate button */}
               <Pressable
                 style={({ pressed }) => [
-                  styles.generateButton,
-                  isGenerating[fieldName] && styles.generateButtonDisabled,
-                  pressed &&
-                    !isGenerating[fieldName] &&
-                    styles.generateButtonPressed,
+                  styles.instructionsToggle,
+                  pressed && styles.buttonPressed,
                 ]}
-                onPress={() => generateWithAI(fieldName)}
-                disabled={isGenerating[fieldName]}
-                android_ripple={{ color: "rgba(255,255,255,0.3)" }}
+                onPress={() => setShowInstructions(!showInstructions)}
               >
-                {isGenerating[fieldName] ? (
-                  <View style={styles.generatingContainer}>
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                    <ThemedText style={styles.generatingText}>
-                      Generating...
-                    </ThemedText>
+                <ThemedText style={styles.instructionsToggleText}>
+                  {showInstructions
+                    ? "Hide All Instructions"
+                    : "Show All Instructions"}
+                </ThemedText>
+                <Ionicons
+                  name={showInstructions ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color="#64dd17"
+                />
+              </Pressable>
+            </View>
+          </Animated.View>
+
+          {/* Fields listing */}
+          {Object.entries(fieldsData).map(([fieldName, field], index) => {
+            const isExpanded = expandedFields[fieldName] || showInstructions;
+
+            return (
+              <Animated.View
+                key={fieldName}
+                style={[
+                  styles.fieldContainer,
+                  {
+                    transform: [
+                      {
+                        translateY: fadeAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [50 + index * 20, 0],
+                        }),
+                      },
+                    ],
+                    opacity: fadeAnim,
+                  },
+                ]}
+              >
+                {/* Field header with expand/collapse action */}
+                <View
+                  style={[
+                    styles.fieldHeaderContainer,
+                    isExpanded && styles.fieldHeaderExpanded,
+                  ]}
+                >
+                  <View style={styles.fieldTitleRow}>
+                    <View style={styles.fieldTitleWrapper}>
+                      <ThemedText style={styles.fieldTitle}>
+                        {fieldName}
+                      </ThemedText>
+                    </View>
+                    <Pressable
+                      onPress={() => toggleFieldInstruction(fieldName)}
+                      style={({ pressed }) => [
+                        styles.expandButton,
+                        pressed && styles.buttonPressed,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.expandButtonContainer,
+                          isExpanded && styles.expandButtonActive,
+                        ]}
+                      >
+                        <Ionicons
+                          name={isExpanded ? "chevron-up" : "chevron-down"}
+                          size={20}
+                          color={isExpanded ? "#64dd17" : textColor + "CC"}
+                        />
+                      </View>
+                    </Pressable>
                   </View>
-                ) : (
-                  <View style={styles.generateButtonContent}>
-                    <MaterialIcons
-                      name="auto-awesome"
-                      size={20}
-                      color="#FFFFFF"
+                </View>
+
+                {/* Field content input */}
+                <TextInput
+                  style={[
+                    styles.fieldInput,
+                    {
+                      color: textColor,
+                      backgroundColor:
+                        backgroundColor === "#000" ? "#0a0a0a" : backgroundColor,
+                      borderColor: borderColor,
+                    },
+                  ]}
+                  multiline
+                  value={field.value}
+                  onChangeText={(text) => updateField(fieldName, text)} // Direct update without substring
+                  placeholder={`Enter ${fieldName.toLowerCase()}...`}
+                  placeholderTextColor={`${textColor}60`}
+                />
+
+                {/* AI instruction section */}
+                {isExpanded && (
+                  <View style={styles.instructionContainer}>
+                    <View style={styles.instructionHeaderRow}>
+                      <MaterialIcons
+                        name="psychology-alt"
+                        size={18}
+                        color="#64dd17"
+                      />
+                      <ThemedText style={styles.instructionLabel}>
+                        AI Template
+                      </ThemedText>
+                    </View>
+
+                    <TextInput
+                      style={[
+                        styles.instructionInput,
+                        {
+                          color: textColor,
+                          backgroundColor:
+                            backgroundColor === "#000" ? "#111" : backgroundColor,
+                          borderColor: "#64dd17" + "40",
+                        },
+                      ]}
+                      multiline
+                      value={getInstruction(fieldName)}
+                      onChangeText={(text) => saveInstruction(fieldName, text)}
+                      placeholder={`How should AI generate this ${fieldName.toLowerCase()}?`}
+                      placeholderTextColor={`${textColor}60`}
                     />
-                    <ThemedText style={styles.generateButtonText}>
-                      Generate with AI
-                    </ThemedText>
+
+                    <View style={styles.instructionNoteContainer}>
+                      <Ionicons
+                        name="information-circle-outline"
+                        style={styles.instructionNoteIcon}
+                        size={16}
+                        color="#64dd17"
+                      />
+                      <ThemedText style={styles.instructionNote}>
+                        This template applies to the &quot;{fieldName}&quot; field
+                        of &quot;{noteType}&quot; note type.
+                      </ThemedText>
+                    </View>
                   </View>
                 )}
-              </Pressable>
-            </Animated.View>
-          );
-        })}
-      </ScrollView>
-      {/* FAB Save Button */}
-      <Pressable
-        onPress={saveNote}
-        style={({ pressed }) => [
-          styles.fabSaveButton,
-          pressed && styles.fabSaveButtonPressed,
-        ]}
-        hitSlop={16}
-      >
-        <Ionicons name="save-outline" size={28} color="#fff" />
-      </Pressable>
+
+                {/* Generate button */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.generateButton,
+                    isGenerating[fieldName] && styles.generateButtonDisabled,
+                    pressed &&
+                      !isGenerating[fieldName] &&
+                      styles.generateButtonPressed,
+                  ]}
+                  onPress={() => generateWithAI(fieldName)}
+                  disabled={isGenerating[fieldName]}
+                  android_ripple={{ color: "rgba(255,255,255,0.3)" }}
+                >
+                  {isGenerating[fieldName] ? (
+                    <View style={styles.generatingContainer}>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <ThemedText style={styles.generatingText}>
+                        Generating...
+                      </ThemedText>
+                    </View>
+                  ) : (
+                    <View style={styles.generateButtonContent}>
+                      <MaterialIcons
+                        name="auto-awesome"
+                        size={20}
+                        color="#FFFFFF"
+                      />
+                      <ThemedText style={styles.generateButtonText}>
+                        Generate with AI
+                      </ThemedText>
+                    </View>
+                  )}
+                </Pressable>
+              </Animated.View>
+            );
+          })}
+        </ScrollView>
+        {/* FAB Save Button */}
+        <Pressable
+          onPress={saveNote}
+          style={({ pressed }) => [
+            styles.fabSaveButton,
+            pressed && styles.fabSaveButtonPressed,
+          ]}
+          hitSlop={16}
+        >
+          <Ionicons name="save-outline" size={28} color="#fff" />
+        </Pressable>
+      </KeyboardAvoidingView>
       <Toast />
     </>
   );
@@ -644,7 +652,7 @@ const styles = StyleSheet.create({
   fabSaveButton: {
     position: "absolute",
     left: 24,
-    bottom: 32,
+    bottom: 25,
     backgroundColor: "#34C759",
     borderRadius: 32,
     width: 56,
