@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   headerButton: {
-    marginRight: 0,
+    marginRight: -10,
     width: 50,
     height: 50,
     justifyContent: "center",
