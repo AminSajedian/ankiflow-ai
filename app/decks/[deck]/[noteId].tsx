@@ -160,16 +160,16 @@ export default function NoteEditor() {
       Toast.show({
         type: "success",
         text1: "Note saved",
-        position: "bottom",
-        bottomOffset: 100,
+        position: "top",
+        // bottomOffset: 150,
       });
     } catch (error) {
       console.error("Error saving note:", error);
       Toast.show({
         type: "error",
         text1: "Failed to save note",
-        position: "bottom",
-        bottomOffset: 100,
+        position: "top",
+        // bottomOffset: 150,
       });
     }
   };
@@ -296,7 +296,8 @@ export default function NoteEditor() {
                 >
                   <View style={styles.fieldTitleRow}>
                     <View style={styles.fieldTitleWrapper}>
-                      <ThemedText style={styles.fieldTitle}>
+                      {/* Fix: Use inline style instead of styles.fieldTitle */}
+                      <ThemedText style={{ fontSize: 18, fontWeight: "bold" }}>
                         {fieldName}
                       </ThemedText>
                     </View>
