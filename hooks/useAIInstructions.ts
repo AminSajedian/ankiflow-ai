@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Prefix for AsyncStorage keys
 const STORAGE_PREFIX = 'ai_instruction_';
@@ -12,6 +12,10 @@ const getStorageKey = (noteType: string, fieldName: string): string => {
 export function useAIInstructions(noteType: string) {
   const [instructions, setInstructions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+
+  // --- Debounce refs ---
+  // Use type 'any' for cross-platform compatibility (NodeJS.Timeout vs number)
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Load all instructions for this note type
   useEffect(() => {
@@ -61,24 +65,29 @@ export function useAIInstructions(noteType: string) {
     return instructions[fieldName] || '';
   }, [instructions]);
 
-  // Save instruction for a field
-  const saveInstruction = useCallback(async (fieldName: string, instruction: string): Promise<boolean> => {
-    if (!noteType || !fieldName) return false;
-    
-    try {
-      const key = getStorageKey(noteType, fieldName);
-      await AsyncStorage.setItem(key, instruction);
-      
-      setInstructions(prev => ({
-        ...prev,
-        [fieldName]: instruction
-      }));
-      
-      return true;
-    } catch (error) {
-      console.error('Error saving AI instruction:', error);
-      return false;
+  // Save instruction for a field (debounced)
+  const saveInstruction = useCallback((fieldName: string, instruction: string): void => {
+    if (!noteType || !fieldName) return;
+
+    setInstructions(prev => ({
+      ...prev,
+      [fieldName]: instruction
+    }));
+
+    // Clear any existing timer for this field
+    if (debounceTimers.current[fieldName]) {
+      clearTimeout(debounceTimers.current[fieldName]);
     }
+
+    // Debounce save to AsyncStorage
+    debounceTimers.current[fieldName] = setTimeout(async () => {
+      try {
+        const key = getStorageKey(noteType, fieldName);
+        await AsyncStorage.setItem(key, instruction);
+      } catch (error) {
+        console.error('Error saving AI instruction:', error);
+      }
+    }, 500); // 500ms debounce
   }, [noteType]);
 
   // Get all instructions as a simple object
