@@ -3,7 +3,6 @@ import { ThemedView } from "@/components/ThemedView";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { AnkiProvider } from "@/providers/AnkiProvider";
-import { NetworkProvider } from '@/providers/NetworkProvider';
 import {
   DarkTheme,
   DefaultTheme,
@@ -19,7 +18,6 @@ export default function AnkiLayout() {
   const headerTintColor = useThemeColor({}, "text");
 
   return (
-    <NetworkProvider>
       <AnkiProvider>
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
           <ThemedView style={styles.container}>
@@ -86,7 +84,6 @@ export default function AnkiLayout() {
           </ThemedView>
         </ThemeProvider>
       </AnkiProvider>
-    </NetworkProvider>
   );
 }
 

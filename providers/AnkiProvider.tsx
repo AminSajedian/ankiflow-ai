@@ -2,7 +2,6 @@
 import { logger } from "@/utils/logger";
 import { createContext, useContext, useRef } from "react";
 import Toast from 'react-native-toast-message';
-import { useNetwork } from './NetworkProvider';
 
 const ANKICONNECT_URL = 'http://127.0.0.1:8765';
 
@@ -57,21 +56,11 @@ export function useAnkiContext() {
 }
 
 export function AnkiProvider({ children }: { children: React.ReactNode }) {
-  const { checkConnection } = useNetwork();
   const isInitialConnection = useRef(true);
 
   async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
     try {
-      if (!await checkConnection()) {
-        Toast.show({
-          type: 'error',
-          text1: 'Network Unavailable',
-          text2: 'Check your internet connection',
-          autoHide: false,
-          position: 'bottom',
-        });
-        return undefined;
-      }
+      // Remove network check for local AnkiConnect actions
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);

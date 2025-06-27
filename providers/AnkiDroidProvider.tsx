@@ -3,7 +3,6 @@ import Toast from 'react-native-toast-message';
 // import { getDecks, getDeckNotes, addNote, syncWithAnkiWeb, openDeck } from '@/utils/ankidroid';
 import { getDecks, getDeckNotes, addNote, syncWithAnkiWeb, openDeck } from '@/utils/ankidroidNative';
 import { logger } from '@/utils/logger';
-import { useNetwork } from './NetworkProvider';
 
 interface FieldWithDescription {
   value: string;
@@ -39,22 +38,10 @@ export function useAnkiDroidContext() {
 }
 
 export function AnkiDroidProvider({ children }: { children: React.ReactNode }) {
-  const { checkConnection } = useNetwork();
   const [isConnected, setIsConnected] = useState(false);
 
   const checkAnkiDroidConnection = useCallback(async () => {
     try {
-      if (!await checkConnection()) {
-        Toast.show({
-          type: 'error',
-          text1: 'Network Unavailable',
-          text2: 'Check your internet connection',
-          autoHide: false,
-          position: 'bottom',
-        });
-        return false;
-      }
-
       // Test if we can connect to AnkiDroid by trying to get decks
       const decks = await getDecks();
       const connected = Array.isArray(decks);
@@ -86,7 +73,7 @@ export function AnkiDroidProvider({ children }: { children: React.ReactNode }) {
       setIsConnected(false);
       return false;
     }
-  }, [checkConnection]);
+  }, []);
 
   const getDecksWrapper = useCallback(async () => {
     try {

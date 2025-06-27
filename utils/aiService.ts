@@ -1,9 +1,10 @@
+import { checkConnection } from "@/utils/networkConnection"; // <-- import the new util
 import { GoogleGenAI } from "@google/genai";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
 
 // AI Api Key Identifier
-const AI_API_KEY_IDENTIFIER = 'gemini_api_key';
+const AI_API_KEY_IDENTIFIER = "gemini_api_key";
 
 // Get API key from AsyncStorage only
 export const getApiKey = async (): Promise<string> => {
@@ -12,7 +13,7 @@ export const getApiKey = async (): Promise<string> => {
     const storedKey = await AsyncStorage.getItem(AI_API_KEY_IDENTIFIER);
     return storedKey || "";
   } catch (error) {
-    console.error('Error getting API key:', error);
+    console.error("Error getting API key:", error);
     return "";
   }
 };
@@ -22,7 +23,7 @@ export const saveApiKey = async (apiKey: string): Promise<void> => {
   try {
     await AsyncStorage.setItem(AI_API_KEY_IDENTIFIER, apiKey);
   } catch (error) {
-    console.error('Error saving API key:', error);
+    console.error("Error saving API key:", error);
     throw error;
   }
 };
@@ -35,10 +36,23 @@ export const generateContent = async (
   currentFieldValue: string = "" // Add parameter for current field value
 ): Promise<string> => {
   try {
+    const isOnline = await checkConnection();
+    if (!isOnline) {
+      Toast.show({
+        type: "error",
+        text1: "No Internet Connection",
+        text2: "AI features require an internet connection.",
+        visibilityTime: 3000,
+      });
+      throw new Error("No internet connection for AI prompt");
+    }
+
     const apiKey = await getApiKey();
 
     if (!apiKey) {
-      throw new Error('Gemini API key not found. Please add your API key in settings.');
+      throw new Error(
+        "Gemini API key not found. Please add your API key in settings."
+      );
     }
 
     // Initialize the Gemini AI client
@@ -50,7 +64,11 @@ export const generateContent = async (
     const prompt = `
       You are an AI assistant helping to create content for Anki flashcard.
       Generate "${targetFieldName}" for "${firstFieldValue}" 
-      ${fieldInstruction ? `with the following instruction: ${fieldInstruction}` : ""}
+      ${
+        fieldInstruction
+          ? `with the following instruction: ${fieldInstruction}`
+          : ""
+      }
     `;
 
     console.log("🚀 ~ generateContent ~ prompt:", prompt);
@@ -72,11 +90,11 @@ export const generateContent = async (
     if (currentFieldValue && currentFieldValue.trim() !== "") {
       return currentFieldValue + "\n------\n" + generatedContent;
     }
-    
+
     return generatedContent;
   } catch (error) {
-    console.error("Error generating content:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
 
     Toast.show({
       type: "error",
@@ -85,18 +103,23 @@ export const generateContent = async (
       visibilityTime: 3000,
     });
 
+    // console.error("Error generating content:", error);
     throw error;
   }
 };
 
 // Simple wrapper around generateContent to match the signature in ai.ts
-export const generateFieldContent = async (prompt: string): Promise<string | null> => {
+export const generateFieldContent = async (
+  prompt: string
+): Promise<string | null> => {
   console.log("🚀 ~ generateFieldContent ~ prompt:", prompt);
   try {
     const apiKey = await getApiKey();
 
     if (!apiKey) {
-      throw new Error('Gemini API key not found. Please add your API key in settings.');
+      throw new Error(
+        "Gemini API key not found. Please add your API key in settings."
+      );
     }
 
     const ai = new GoogleGenAI({
@@ -118,16 +141,17 @@ export const generateFieldContent = async (prompt: string): Promise<string | nul
     console.log("🚀 ~ generateFieldContent ~ response:", response.text);
     return response.text || null;
   } catch (error) {
-    console.error("Error generating content:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-
+    const errorMessage =
+    error instanceof Error ? error.message : "Unknown error occurred";
+    
     Toast.show({
       type: "error",
       text1: "Failed to Generate Content by AI",
       text2: errorMessage,
       visibilityTime: 3000,
     });
-
+    
+    // console.error("Error generating content:", error);
     return null;
   }
 };

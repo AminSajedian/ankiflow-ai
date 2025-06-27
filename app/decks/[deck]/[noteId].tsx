@@ -129,13 +129,13 @@ export default function NoteEditor() {
       // Update the field with the returned content (which now includes separator if needed)
       updateField(targetFieldName, content);
     } catch (error) {
-      console.error("Error generating content:", error);
       Toast.show({
         type: "error",
         text1: "Failed to generate content",
         text2: error instanceof Error ? error.message : "Unknown error",
         position: "top",
       });
+      // console.error("Error generating content:", error);
     } finally {
       // Reset generating state
       setIsGenerating((prev) => ({ ...prev, [targetFieldName]: false }));
@@ -159,6 +159,7 @@ export default function NoteEditor() {
         type: "success",
         text1: "Note saved",
         position: "bottom",
+        bottomOffset: 100,
       });
     } catch (error) {
       console.error("Error saving note:", error);
@@ -166,6 +167,7 @@ export default function NoteEditor() {
         type: "error",
         text1: "Failed to save note",
         position: "bottom",
+        bottomOffset: 100,
       });
     }
   };
