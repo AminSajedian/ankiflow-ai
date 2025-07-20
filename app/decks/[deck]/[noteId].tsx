@@ -205,7 +205,7 @@ export default function NoteEditor() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 100} // adjust offset if needed
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 100}
       >
         <ScrollView
           style={styles.container}
