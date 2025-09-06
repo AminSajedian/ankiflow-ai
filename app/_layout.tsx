@@ -1,5 +1,3 @@
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { AnkiProvider } from "@/providers/AnkiProvider";
@@ -9,7 +7,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Toast from 'react-native-toast-message';
 
 export default function AnkiLayout() {
@@ -28,7 +26,7 @@ export default function AnkiLayout() {
   return (
       <AnkiProvider>
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <ThemedView style={styles.container}>
+          <View style={[styles.container, { backgroundColor }]}>
             <Stack
               screenOptions={{
                 headerStyle: {
@@ -68,29 +66,8 @@ export default function AnkiLayout() {
             <Toast
               position='bottom'
               bottomOffset={20}
-              config={{
-                // changed: use the dynamic bg colors above and force white text on colored toasts
-                success: ({ text1, text2 }) => (
-                  <ThemedView style={[styles.toast, { backgroundColor: successBg }]}>
-                    <ThemedText style={[styles.toastTitle, { color: toastTextColor }]}>{text1}</ThemedText>
-                    {text2 && <ThemedText style={[styles.toastMessage, { color: toastTextColor }]}>{text2}</ThemedText>}
-                  </ThemedView>
-                ),
-                error: ({ text1, text2 }) => (
-                  <ThemedView style={[styles.toast, { backgroundColor: errorBg }]}>
-                    <ThemedText style={[styles.toastTitle, { color: toastTextColor }]}>{text1}</ThemedText>
-                    {text2 && <ThemedText style={[styles.toastMessage, { color: toastTextColor }]}>{text2}</ThemedText>}
-                  </ThemedView>
-                ),
-                info: ({ text1, text2 }) => (
-                  <ThemedView style={[styles.toast, { backgroundColor: infoBg }]}>
-                    <ThemedText style={[styles.toastTitle, { color: toastTextColor }]}>{text1}</ThemedText>
-                    {text2 && <ThemedText style={[styles.toastMessage, { color: toastTextColor }]}>{text2}</ThemedText>}
-                  </ThemedView>
-                ),
-              }}
             />
-          </ThemedView>
+          </View>
         </ThemeProvider>
       </AnkiProvider>
   );
@@ -99,26 +76,5 @@ export default function AnkiLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  toast: {
-    padding: 16,
-    borderRadius: 8,
-    marginHorizontal: 16,
-    // backgroundColor removed; toast bg provided inline per type using theme-aware colors
-  },
-  errorToast: {
-    // removed fixed background
-  },
-  infoToast: {
-    // removed fixed background
-  },
-  toastTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    // color removed here; set inline so it can be forced to white on colored backgrounds
-  },
-  toastMessage: {
-    fontSize: 14,
-    marginTop: 4,
   },
 });
