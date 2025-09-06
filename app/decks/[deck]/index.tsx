@@ -6,10 +6,12 @@ import { Link, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Animated, FlatList, Pressable, StyleSheet, TextInput, View } from "react-native";
 
-// Simplified note interface without full fields
+// Note interface with creation date
 interface Note {
   id: number;
   preview: string; // Just the preview text we need to display
+  created: number; // Creation timestamp
+  createdDate: string; // Formatted creation date for display
 }
 
 export default function NoteList() {
@@ -34,20 +36,29 @@ export default function NoteList() {
       try {
         // getNotes returns number[] (IDs only)
         const noteIds = await getNotes(deck);
-        // Batch fetch all note fields at once
-        const notesFieldsArr = await getNotesFieldsBatch(noteIds);
+        // Batch fetch all note fields at once (now includes creation info)
+        const notesWithInfo = await getNotesFieldsBatch(noteIds);
 
-        // Compose notes with previews
-        const notesWithPreviews = noteIds.map((id, idx) => {
-          const fields = notesFieldsArr[idx] || {};
+        // Compose notes with previews and creation dates
+        const notesWithPreviews = notesWithInfo.map((noteInfo) => {
+          const fields = noteInfo.fields;
           const firstFieldValue = Object.values(fields)[0]?.value || "Empty note";
           const preview = firstFieldValue.substring(0, 100) +
             (firstFieldValue.length > 100 ? "..." : "");
+          
+          // Format the creation date
+          const createdDate = new Date(noteInfo.created * 1000).toLocaleDateString();
+          
           return {
-            id,
-            preview
+            id: noteInfo.noteId,
+            preview,
+            created: noteInfo.created,
+            createdDate
           };
         });
+
+        // Sort notes by creation date (newest first)
+        notesWithPreviews.sort((a, b) => b.created - a.created);
 
         setNotes(notesWithPreviews);
       } finally {
@@ -89,6 +100,9 @@ export default function NoteList() {
         <ThemedText style={styles.headerTitle}>
           {deck}
           <ThemedText style={styles.notesCountText}> • {notes.length} notes</ThemedText>
+        </ThemedText>
+        <ThemedText style={[styles.sortInfo, { color: textColor + "80" }]}>
+          Sorted by creation date (newest first)
         </ThemedText>
       </View>
 
@@ -141,9 +155,14 @@ export default function NoteList() {
                     { backgroundColor: pressed ? cardPressedBg : cardBg }, // changed
                     pressed && styles.noteItemPressed
                   ]}>
-                    <ThemedText style={[styles.notePreview, { color: textColor }]}>
-                      {item.preview}
-                    </ThemedText>
+                    <View style={styles.noteContent}>
+                      <ThemedText style={[styles.notePreview, { color: textColor }]}>
+                        {item.preview}
+                      </ThemedText>
+                      {/* <ThemedText style={[styles.noteDate, { color: textColor + "80" }]}>
+                        Created: {item.createdDate}
+                      </ThemedText> */}
+                    </View>
                     <Ionicons name="chevron-forward" size={20} color={textColor + "60"} />
                   </View>
                 )}
@@ -174,6 +193,11 @@ const styles = StyleSheet.create({
   notesCountText: {
     fontSize: 16,
     opacity: 0.7,
+  },
+  sortInfo: {
+    fontSize: 12,
+    marginTop: 4,
+    opacity: 0.6,
   },
   deckInfoRow: {
     flexDirection: 'row',
@@ -233,8 +257,15 @@ const styles = StyleSheet.create({
   },
   notePreview: {
     fontSize: 16,
+    marginBottom: 4,
+  },
+  noteContent: {
     flex: 1,
     marginRight: 8,
+  },
+  noteDate: {
+    fontSize: 12,
+    opacity: 0.7,
   },
   emptyState: {
     flex: 1,

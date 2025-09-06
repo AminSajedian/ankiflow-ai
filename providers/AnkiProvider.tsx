@@ -14,6 +14,10 @@ interface AnkiNoteField {
 interface AnkiNoteInfo {
   noteId: number;
   fields: Record<string, AnkiNoteField>;
+  modelName?: string;
+  tags?: string[];
+  cardIds?: number[];
+  mod?: number; // modification time
 }
 
 interface FieldWithDescription {
@@ -27,6 +31,12 @@ interface NoteType {
   fields: string[];
 }
 
+interface NoteWithInfo {
+  fields: Record<string, FieldWithDescription>;
+  created: number;
+  noteId: number;
+}
+
 interface AnkiContextValue {
   getDecks: () => Promise<string[]>;
   getNotes: (deck: string) => Promise<number[]>;
@@ -36,7 +46,7 @@ interface AnkiContextValue {
   getNoteType: (noteId: number) => Promise<string>;
   getNoteTypeFields: (modelName: string) => Promise<string[]>;
   getAllNoteTypes: () => Promise<NoteType[]>;
-  getNotesFieldsBatch: (noteIds: number[]) => Promise<Record<string, FieldWithDescription>[]>;
+  getNotesFieldsBatch: (noteIds: number[]) => Promise<NoteWithInfo[]>;
 }
 
 const AnkiContext = createContext<AnkiContextValue>({
@@ -328,6 +338,7 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
         notes: noteIds,
       });
       if (!modelResult) return [];
+      
       return modelResult.map(noteInfo => {
         const fieldsArray = Object.entries(noteInfo.fields)
           .map(([key, field]) => ({
@@ -345,7 +356,16 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
             description: field.description
           };
         }
-        return fields;
+        
+        // Use note ID to approximate creation time (Anki note IDs are sequential)
+        // Convert note ID to approximate timestamp (note IDs start from timestamp in milliseconds)
+        const created = Math.floor(noteInfo.noteId / 1000);
+        
+        return {
+          fields,
+          created,
+          noteId: noteInfo.noteId
+        };
       });
     },
   };
