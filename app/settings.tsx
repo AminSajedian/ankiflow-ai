@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getApiKey, saveApiKey } from '@/utils/aiService';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,8 +14,15 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
+  // theme-aware colors
   const textColor = useThemeColor({}, "text");
   const backgroundColor = useThemeColor({}, "background");
+  const tint = useThemeColor({}, 'tint');
+  const inputBg = useThemeColor({ light: '#fff', dark: '#111' }, 'background');
+  const linkColor = useThemeColor({ light: '#3498db', dark: '#76c7ff' }, 'tint');
+  const saveButtonBg = useThemeColor({ light: '#2ecc71', dark: '#1f8e4e' }, 'background');
+  // activity indicator color should follow theme (kept white on colored save button)
+  const activityIndicatorColor = useThemeColor({ light: '#fff', dark: '#fff' }, 'text');
 
   // Load API key on mount
   useEffect(() => {
@@ -74,76 +82,76 @@ export default function Settings() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
-      <View style={styles.container}>
-        <Stack.Screen
-          options={{
-            title: 'Settings',
-            headerStyle: {
-              backgroundColor: '#1a1a1a',
-            },
-            headerTintColor: '#fff',
-          }}
-        />
+      <ThemedView style={styles.container}>
+         <Stack.Screen
+           options={{
+             title: 'Settings',
+             headerStyle: {
+              backgroundColor: backgroundColor,
+             },
+            headerTintColor: textColor,
+           }}
+         />
 
-        <View style={styles.content}>
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>AI Settings</ThemedText>
-            
-            <ThemedText style={styles.label}>Gemini API Key</ThemedText>
-            <View style={styles.apiKeyContainer}>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
+        <View style={[styles.content, { backgroundColor: backgroundColor }]}> 
+           <View style={styles.section}>
+             <ThemedText style={styles.sectionTitle}>AI Settings</ThemedText>
+             
+             <ThemedText style={styles.label}>Gemini API Key</ThemedText>
+             <View style={styles.apiKeyContainer}>
+               <TextInput
+                 style={[
+                   styles.input,
+                   {
                     color: textColor,
-                    backgroundColor,
+                    backgroundColor: inputBg,
                     borderColor: textColor + '40',
-                  }
-                ]}
-                value={apiKey}
-                onChangeText={setApiKey}
-                placeholder="Enter your Gemini API key"
-                placeholderTextColor={textColor + '80'}
-                secureTextEntry={!isVisible}
-              />
-              <Pressable 
-                style={styles.visibilityButton}
-                onPress={() => setIsVisible(!isVisible)}
-              >
-                <Ionicons 
-                  name={isVisible ? 'eye-off' : 'eye'} 
-                  size={24} 
-                  color={textColor} 
-                />
-              </Pressable>
-            </View>
-            
-            <ThemedText style={styles.helperText}>
-              You need a Gemini API key to use AI features. Get one at{' '}
+                   }
+                 ]}
+                 value={apiKey}
+                 onChangeText={setApiKey}
+                 placeholder="Enter your Gemini API key"
+                 placeholderTextColor={textColor + '80'}
+                 secureTextEntry={!isVisible}
+               />
+               <Pressable 
+                 style={styles.visibilityButton}
+                 onPress={() => setIsVisible(!isVisible)}
+               >
+                 <Ionicons 
+                   name={isVisible ? 'eye-off' : 'eye'} 
+                   size={24} 
+                   color={textColor} 
+                 />
+               </Pressable>
+             </View>
+             
+             <ThemedText style={styles.helperText}>
+               You need a Gemini API key to use AI features. Get one at{' '}
               <ThemedText
-                style={styles.link}
+                style={[styles.link, { color: linkColor }]}
                 onPress={() => Linking.openURL('https://aistudio.google.com/app/apikey')}
               >
                 https://aistudio.google.com/app/apikey
               </ThemedText>
-            </ThemedText>
+             </ThemedText>
 
-            <Pressable
-              style={[styles.saveButton, saving && styles.savingButton]}
-              onPress={handleSave}
-              disabled={saving || loading}
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <ThemedText style={styles.saveButtonText}>Save API Key</ThemedText>
-              )}
-            </Pressable>
-          </View>
-        </View>
+             <Pressable
+              style={[styles.saveButton, saving && styles.savingButton, { backgroundColor: saveButtonBg }]}
+               onPress={handleSave}
+               disabled={saving || loading}
+             >
+               {saving ? (
+                 <ActivityIndicator size="small" color={activityIndicatorColor} />
+               ) : (
+                <ThemedText style={[styles.saveButtonText, { color: textColor }]}>Save API Key</ThemedText>
+               )}
+             </Pressable>
+           </View>
+         </View>
         
         <Toast />
-      </View>
+      </ThemedView>
     </KeyboardAvoidingView>
   );
 }
@@ -151,7 +159,7 @@ export default function Settings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    // backgroundColor: '#000',
   },
   content: {
     padding: 16,
@@ -191,10 +199,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   link: {
-    color: '#3498db',
+    // color overridden inline using theme tint
   },
   saveButton: {
-    backgroundColor: '#2ecc71',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -204,7 +211,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   saveButtonText: {
-    color: '#fff',
+    // color provided inline to match theme
     fontWeight: '600',
     fontSize: 16,
   },

@@ -17,6 +17,14 @@ export default function AnkiLayout() {
   const backgroundColor = useThemeColor({}, "background");
   const headerTintColor = useThemeColor({}, "text");
 
+  // changed: explicit toast backgrounds that adapt to light/dark using useThemeColor overrides
+  const successBg = useThemeColor({ light: '#4CAF50', dark: '#2e7d32' }, 'background');
+  const errorBg = useThemeColor({ light: '#F44336', dark: '#b71c1c' }, 'background');
+  const infoBg = useThemeColor({ light: '#2196F3', dark: '#1565c0' }, 'background');
+
+  // use a theme-aware text color for toasts (keeps white on colored toasts but uses the hook)
+  const toastTextColor = useThemeColor({ light: '#fff', dark: '#fff' }, 'text');
+
   return (
       <AnkiProvider>
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -61,22 +69,23 @@ export default function AnkiLayout() {
               position='bottom'
               bottomOffset={20}
               config={{
+                // changed: use the dynamic bg colors above and force white text on colored toasts
                 success: ({ text1, text2 }) => (
-                  <ThemedView style={styles.toast}>
-                    <ThemedText style={styles.toastTitle}>{text1}</ThemedText>
-                    {text2 && <ThemedText style={styles.toastMessage}>{text2}</ThemedText>}
+                  <ThemedView style={[styles.toast, { backgroundColor: successBg }]}>
+                    <ThemedText style={[styles.toastTitle, { color: toastTextColor }]}>{text1}</ThemedText>
+                    {text2 && <ThemedText style={[styles.toastMessage, { color: toastTextColor }]}>{text2}</ThemedText>}
                   </ThemedView>
                 ),
                 error: ({ text1, text2 }) => (
-                  <ThemedView style={[styles.toast, styles.errorToast]}>
-                    <ThemedText style={styles.toastTitle}>{text1}</ThemedText>
-                    {text2 && <ThemedText style={styles.toastMessage}>{text2}</ThemedText>}
+                  <ThemedView style={[styles.toast, { backgroundColor: errorBg }]}>
+                    <ThemedText style={[styles.toastTitle, { color: toastTextColor }]}>{text1}</ThemedText>
+                    {text2 && <ThemedText style={[styles.toastMessage, { color: toastTextColor }]}>{text2}</ThemedText>}
                   </ThemedView>
                 ),
                 info: ({ text1, text2 }) => (
-                  <ThemedView style={[styles.toast, styles.infoToast]}>
-                    <ThemedText style={styles.toastTitle}>{text1}</ThemedText>
-                    {text2 && <ThemedText style={styles.toastMessage}>{text2}</ThemedText>}
+                  <ThemedView style={[styles.toast, { backgroundColor: infoBg }]}>
+                    <ThemedText style={[styles.toastTitle, { color: toastTextColor }]}>{text1}</ThemedText>
+                    {text2 && <ThemedText style={[styles.toastMessage, { color: toastTextColor }]}>{text2}</ThemedText>}
                   </ThemedView>
                 ),
               }}
@@ -95,22 +104,21 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     marginHorizontal: 16,
-    backgroundColor: '#4CAF50',
+    // backgroundColor removed; toast bg provided inline per type using theme-aware colors
   },
   errorToast: {
-    backgroundColor: '#F44336',
+    // removed fixed background
   },
   infoToast: {
-    backgroundColor: '#2196F3',
+    // removed fixed background
   },
   toastTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    // color removed here; set inline so it can be forced to white on colored backgrounds
   },
   toastMessage: {
     fontSize: 14,
-    color: '#fff',
     marginTop: 4,
   },
 });

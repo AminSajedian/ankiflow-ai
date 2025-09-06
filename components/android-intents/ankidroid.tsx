@@ -1,19 +1,22 @@
-import React from 'react';
-import { Stack } from 'expo-router';
 import { AnkiDroidTest } from '@/components/AnkiDroidTest';
 import { ThemedView } from '@/components/ThemedView';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { Stack } from 'expo-router';
+import React from 'react';
 import { StyleSheet } from 'react-native';
 
 export default function AnkiDroidTestScreen() {
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen
         options={{
           title: 'AnkiDroid API Test',
           headerStyle: {
-            backgroundColor: '#000',
+            backgroundColor: backgroundColor,
           },
-          headerTintColor: '#fff',
+          headerTintColor: textColor,
         }}
       />
       <AnkiDroidTest />
@@ -24,6 +27,5 @@ export default function AnkiDroidTestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
   },
 });

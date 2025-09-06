@@ -1,12 +1,13 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { useThemeColor } from '@/hooks/useThemeColor'; // changed: import for theme colors
+import { useAnkiContext } from "@/providers/AnkiProvider";
 import { DeckNode, flattenDeckTree, organizeDeckTree } from "@/utils/deckOrganizer";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, Stack } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Animated, FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import Toast from 'react-native-toast-message';
-import { useAnkiContext } from "@/providers/AnkiProvider";
 
 export default function DeckList() {
   const { getDecks } = useAnkiContext();
@@ -19,6 +20,15 @@ export default function DeckList() {
 
   // Animation value for list items
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  // changed: compute theme-aware colors used by this screen
+  const screenBackground = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const iconColor = useThemeColor({}, 'icon');
+  const tint = useThemeColor({}, 'tint');
+  // card background variants depending on theme
+  const cardBg = useThemeColor({ light: '#fff', dark: '#1a1a1a' }, 'background');
+  const cardPressedBg = useThemeColor({ light: '#f0f0f0', dark: '#252525' }, 'background');
 
   const loadDecks = useCallback(async (showToast = false) => {
     try {
@@ -121,10 +131,11 @@ export default function DeckList() {
           <Pressable
             style={({ pressed }) => [
               styles.deckItem,
+              { backgroundColor: pressed ? cardPressedBg : cardBg }, // changed: dynamic bg
               pressed && styles.deckItemPressed
             ]}
             android_ripple={{
-              color: 'rgba(255,255,255,0.1)',
+              color: 'rgba(0,0,0,0.08)', // changed: neutral ripple so it shows in both themes
               borderless: false,
               foreground: true
             }}
@@ -132,7 +143,7 @@ export default function DeckList() {
           >
             <View style={styles.deckItemContent}>
 
-              <ThemedText style={styles.deckTitle} numberOfLines={1}>
+              <ThemedText style={[styles.deckTitle, { color: textColor }]} numberOfLines={1}>
                 {displayName}
               </ThemedText>
 
@@ -140,7 +151,7 @@ export default function DeckList() {
                 <Ionicons
                   name="chevron-forward"
                   size={20}
-                  color="#fff"
+                  color={iconColor}
                   style={styles.chevron}
                 />
               )}
@@ -154,7 +165,7 @@ export default function DeckList() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#64dd17" />
+        <ActivityIndicator size="large" color={tint} /> {/* changed: use theme tint */}
         <ThemedText style={styles.loadingText}>Loading your decks...</ThemedText>
       </ThemedView>
     );
@@ -163,10 +174,10 @@ export default function DeckList() {
   if (error) {
     return (
       <ThemedView style={[styles.container, styles.center]}>
-        <MaterialCommunityIcons name="alert-circle-outline" size={48} color="#ff4444" />
-        <ThemedText style={styles.error}>{error}</ThemedText>
-        <Pressable style={styles.retryButton} onPress={() => loadDecks()}>
-          <ThemedText style={styles.retryText}>Retry</ThemedText>
+        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={/* changed: use theme-aware error tint */ useThemeColor({ light: '#ff4444', dark: '#ff6b6b' }, 'background')} />
+        <ThemedText style={[styles.error, { color: useThemeColor({}, 'text') }]}>{error}</ThemedText>
+        <Pressable style={[styles.retryButton, { backgroundColor: useThemeColor({ light: '#333', dark: '#444' }, 'background') }]} onPress={() => loadDecks()}>
+          <ThemedText style={[styles.retryText, { color: useThemeColor({}, 'text') }]}>Retry</ThemedText>
         </Pressable>
       </ThemedView>
     );
@@ -178,7 +189,7 @@ export default function DeckList() {
         options={{
           title: "Your Decks",
           headerTitleStyle: styles.headerTitle,
-          headerStyle: { backgroundColor: '#121212' },
+          headerStyle: { backgroundColor: screenBackground }, // changed: use theme background
           headerShadowVisible: false,
           headerRight: () => (
             <Pressable
@@ -188,7 +199,7 @@ export default function DeckList() {
                 pressed && { opacity: 0.7 }
               ]}
             >
-              <Ionicons name="settings-outline" size={24} color="#fff" />
+              <Ionicons name="settings-outline" size={24} color={textColor} /> {/* changed */}
             </Pressable>
           ),
         }}
@@ -199,8 +210,8 @@ export default function DeckList() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#64dd17"
-            colors={["#64dd17"]}
+            tintColor={tint} // changed: use theme tint
+            colors={[tint]}
           />
         }
         data={visibleDecks}
@@ -210,7 +221,7 @@ export default function DeckList() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="cards-outline" size={60} color="#333" />
+            <MaterialCommunityIcons name="cards-outline" size={60} color={iconColor} /> {/* changed */}
             <ThemedText style={styles.emptyText}>No decks found</ThemedText>
             <ThemedText style={styles.emptySubText}>Pull down to refresh</ThemedText>
           </View>
@@ -223,7 +234,7 @@ export default function DeckList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    // removed hard-coded backgroundColor; ThemedView provides the background
   },
   headerTitle: {
     fontSize: 20,
@@ -248,11 +259,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden', // This ensures the ripple effect stays within borders
   },
   deckItem: {
-    backgroundColor: '#1a1a1a',
+    // backgroundColor moved to inline theme-aware override
     width: '100%', // Ensure the pressable takes full width
   },
   deckItemPressed: {
-    backgroundColor: '#252525',
+    // backgroundColor moved to inline theme-aware override
   },
   deckItemContent: {
     flexDirection: 'row',
@@ -268,7 +279,7 @@ const styles = StyleSheet.create({
   deckTitle: {
     fontSize: 16,
     flex: 1,
-    color: '#fff',
+    // color moved to inline theme-aware override
     fontWeight: '500',
   },
   center: {
@@ -280,19 +291,18 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   error: {
-    color: '#ff4444',
+    // color removed; applied inline so it matches theme text color
     textAlign: 'center',
     margin: 20,
   },
   retryButton: {
-    backgroundColor: '#333',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
     marginTop: 16,
   },
   retryText: {
-    color: '#fff',
+    // color removed; applied inline to match theme
     fontWeight: '500',
   },
   emptyContainer: {

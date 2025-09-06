@@ -19,7 +19,10 @@ export default function NoteList() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const textColor = useThemeColor({}, "text");
-  // const backgroundColor = useThemeColor({}, "background");
+  const backgroundColor = useThemeColor({}, "background");
+  const tint = useThemeColor({}, 'tint');
+  const cardBg = useThemeColor({ light: '#fff', dark: '#111' }, 'background');
+  const cardPressedBg = useThemeColor({ light: '#f7f7f7', dark: '#222' }, 'background');
 
   // For fade-in animation of cards
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -52,7 +55,7 @@ export default function NoteList() {
       }
     }
     loadNotes();
-    
+
     // Start fade-in animation when component mounts
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -63,8 +66,8 @@ export default function NoteList() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
+      <View style={[styles.centered, { backgroundColor }]}> {/* changed */}
+        <ActivityIndicator size="large" color={tint} />
       </View>
     );
   }
@@ -72,7 +75,7 @@ export default function NoteList() {
   const filterNotes = (notes: Note[], query: string) => {
     if (!query.trim()) return notes;
     const lowercaseQuery = query.toLowerCase();
-    return notes.filter(note => 
+    return notes.filter(note =>
       note.preview.toLowerCase().includes(lowercaseQuery)
     );
   };
@@ -80,17 +83,17 @@ export default function NoteList() {
   const filteredNotes = filterNotes(notes, searchQuery);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container]}> {/* changed */}
       {/* Header with deck name and stats */}
       <View style={styles.header}>
         <ThemedText style={styles.headerTitle}>
-          {deck} 
+          {deck}
           <ThemedText style={styles.notesCountText}> • {notes.length} notes</ThemedText>
         </ThemedText>
       </View>
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputWrapper}>
+      <View style={[styles.searchContainer]}>
+        <View style={[styles.searchInputWrapper, { backgroundColor: backgroundColor }]}>
           <Ionicons name="search" size={20} color={textColor + "80"} style={styles.searchIcon} />
           <TextInput
             style={[
@@ -135,9 +138,10 @@ export default function NoteList() {
                 {({ pressed }) => (
                   <View style={[
                     styles.noteItem,
+                    { backgroundColor: pressed ? cardPressedBg : cardBg }, // changed
                     pressed && styles.noteItemPressed
                   ]}>
-                    <ThemedText style={styles.notePreview}>
+                    <ThemedText style={[styles.notePreview, { color: textColor }]}>
                       {item.preview}
                     </ThemedText>
                     <Ionicons name="chevron-forward" size={20} color={textColor + "60"} />
@@ -155,7 +159,7 @@ export default function NoteList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    // backgroundColor removed; provided via inline/theme
   },
   header: {
     paddingHorizontal: 16,
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
   separator: {
     width: 8,
     height: 16,
-    backgroundColor: '#64dd17', // Green color from screenshot
+    // color removed; use theme tint inline if needed
     marginHorizontal: 8,
   },
   deckName: {
@@ -198,7 +202,7 @@ const styles = StyleSheet.create({
   searchInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111',
+    // backgroundColor removed; use inline theme-aware color
     borderRadius: 24,
     paddingHorizontal: 12,
     height: 48,
@@ -220,12 +224,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#222',
-    backgroundColor: '#111',
+    // borderBottomColor removed; use inline theme-aware color
+    // backgroundColor removed; use inline theme-aware color
     marginBottom: 1,
   },
   noteItemPressed: {
-    backgroundColor: '#222',
+    // backgroundColor removed; use inline theme-aware override when pressed
   },
   notePreview: {
     fontSize: 16,
@@ -247,6 +251,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
+    // backgroundColor removed; provided inline when used
   },
 });

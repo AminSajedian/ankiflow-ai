@@ -1,3 +1,4 @@
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAnkiDroidContext } from '@/providers/AnkiDroidProvider';
 import React, { useState } from 'react';
 import { ActivityIndicator, Button, ScrollView, StyleSheet, View } from 'react-native';
@@ -14,6 +15,15 @@ export function AnkiDroidTest() {
     status: 'success' | 'error' | 'info' | null;
     message: string;
   }>({ status: null, message: '' });
+
+  // theme-aware colors
+  const bg = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const successBg = useThemeColor({ light: '#1e463a', dark: '#123826' }, 'background');
+  const errorBg = useThemeColor({ light: '#4e2428', dark: '#6b2d2d' }, 'background');
+  const infoBg = useThemeColor({ light: '#2e3c50', dark: '#213047' }, 'background');
+  const itemBg = useThemeColor({ light: '#f7f7f7', dark: '#1a1a1a' }, 'background');
+  const selectedBg = useThemeColor({ light: '#dfeef7', dark: '#2a3d55' }, 'background');
 
   const testConnection = async () => {
     setLoading(true);
@@ -122,7 +132,7 @@ export function AnkiDroidTest() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: bg }]}>
       <ThemedText style={styles.title}>AnkiDroid API Test</ThemedText>
 
       <View style={styles.buttonContainer}>
@@ -151,12 +161,12 @@ export function AnkiDroidTest() {
         <ThemedView 
           style={[
             styles.resultContainer, 
-            testResult.status === 'success' && styles.successResult,
-            testResult.status === 'error' && styles.errorResult,
-            testResult.status === 'info' && styles.infoResult,
+            testResult.status === 'success' && { backgroundColor: successBg },
+            testResult.status === 'error' && { backgroundColor: errorBg },
+            testResult.status === 'info' && { backgroundColor: infoBg },
           ]}
         >
-          <ThemedText style={styles.resultText}>{testResult.message}</ThemedText>
+          <ThemedText style={[styles.resultText, { color: textColor }]}>{testResult.message}</ThemedText>
         </ThemedView>
       )}
 
@@ -167,10 +177,10 @@ export function AnkiDroidTest() {
             {decks.map((deck, index) => (
               <ThemedView 
                 key={index} 
-                style={[styles.itemContainer, selectedDeck === deck && styles.selectedItem]}
+                style={[styles.itemContainer, { backgroundColor: selectedDeck === deck ? selectedBg : itemBg }]}
               >
                 <ThemedText 
-                  style={styles.itemText} 
+                  style={[styles.itemText, { color: textColor }]} 
                   onPress={() => loadNotes(deck)}
                 >
                   {deck}
@@ -186,8 +196,8 @@ export function AnkiDroidTest() {
               Notes in {selectedDeck}:
             </ThemedText>
             {notes.map((noteId, index) => (
-              <ThemedView key={index} style={styles.itemContainer}>
-                <ThemedText style={styles.itemText}>ID: {noteId}</ThemedText>
+              <ThemedView key={index} style={[styles.itemContainer, { backgroundColor: itemBg }]}> 
+                <ThemedText style={[styles.itemText, { color: textColor }]}>ID: {noteId}</ThemedText>
               </ThemedView>
             ))}
           </>
@@ -219,17 +229,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginVertical: 16,
   },
-  successResult: {
-    backgroundColor: '#1e463a',
-  },
-  errorResult: {
-    backgroundColor: '#4e2428',
-  },
-  infoResult: {
-    backgroundColor: '#2e3c50',
-  },
   resultText: {
-    color: '#fff',
+    fontSize: 14,
   },
   scrollView: {
     flex: 1,
@@ -245,10 +246,8 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
-    backgroundColor: '#1a1a1a',
   },
   selectedItem: {
-    backgroundColor: '#2a3d55',
   },
   itemText: {
     fontSize: 14,

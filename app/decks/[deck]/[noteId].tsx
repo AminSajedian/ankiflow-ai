@@ -5,7 +5,7 @@ import { useAnkiContext } from "@/providers/AnkiProvider";
 import { generateContent } from "@/utils/aiService";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -32,6 +32,7 @@ export default function NoteEditor() {
   }>();
   const { getNoteFields, updateNote, getNoteType } = useAnkiContext();
 
+  // --- React state hooks (keep together) ---
   const [fieldsData, setFieldsData] = useState<
     Record<string, FieldWithDescription>
   >({});
@@ -39,24 +40,46 @@ export default function NoteEditor() {
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState<Record<string, boolean>>({});
   const [showInstructions, setShowInstructions] = useState(false);
+  const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});
 
-  // Theme colors
+  // Animation ref
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // --- Theme hooks (grouped together to keep hook order stable) ---
   const textColor = useThemeColor({}, "text");
   const backgroundColor = useThemeColor({}, "background");
+  const tintColor = useThemeColor({}, "tint");
   const borderColor = textColor + "40";
+  // Card and subtle variants
+  const cardBackground = useThemeColor({ light: "#fff", dark: "#111" }, "background");
+  const badgeBackground = useThemeColor({ light: "#f2f2f2", dark: "#222" }, "background");
+  const instructionBackground = useThemeColor({ light: "rgba(10,126,164,0.03)", dark: "rgba(255,255,255,0.03)" }, "tint");
+  const generateColor = useThemeColor({ light: "#fff", dark: "#fff" }, "text");
+  const generateBg = useThemeColor({ light: "rgb(0, 123, 255)", dark: "rgba(0,86,179,1)" }, "tint");
+  const generateDisabledBg = useThemeColor({ light: "rgba(10,126,164,0.5)", dark: "rgba(255,255,255,0.12)" }, "tint");
+  const generatePressedBg = useThemeColor({ light: "rgba(0,86,179,1)", dark: "rgba(0,86,179,1)" }, "tint");
+  const buttonTextOnTint = useThemeColor({ light: "#fff", dark: "#000" }, "text");
+  const instructionToggleBg = useThemeColor({ light: "rgba(10,126,164,0.12)", dark: "rgba(255,255,255,0.06)" }, "tint");
+  const fieldHeaderBg = useThemeColor({ light: "#f7f7f7", dark: "#1a1a1a" }, "background");
+  const instructionBorderTopColor = useThemeColor({ light: 'rgba(10,126,164,0.2)', dark: 'rgba(255,255,255,0.06)' }, 'tint');
+  const instructionInputBorderColor = useThemeColor({ light: 'rgba(10,126,164,0.2)', dark: 'rgba(255,255,255,0.12)' }, 'tint');
+  const fabPressedBg = useThemeColor({ light: '#249944', dark: '#249944' }, 'tint');
+  // theme-aware shadow color for cards and FAB
+  const shadowColor = useThemeColor({ light: '#000', dark: '#000' }, 'text');
+  const clearButtonBg = useThemeColor({ light: 'rgba(0,0,0,0.06)', dark: 'rgba(255,255,255,0.04)' }, 'tint');
+  const clearButtonPressedBg = useThemeColor({ light: 'rgba(0,0,0,0.12)', dark: 'rgba(255,255,255,0.08)' }, 'tint');
+  const expandButtonBg = useThemeColor({ light: 'rgba(255,255,255,0.04)', dark: 'rgba(255,255,255,0.02)' }, 'tint');
+  const expandActiveBg = useThemeColor({ light: 'rgba(100, 221, 23, 0.15)', dark: 'rgba(100, 221, 23, 0.08)' }, 'tint');
+  // ripple color for Android and expandable header border color
+  const rippleColor = useThemeColor({ light: 'rgba(0,0,0,0.06)', dark: 'rgba(255,255,255,0.12)' }, 'tint');
+  const expandBorderColor = useThemeColor({ light: 'rgba(100, 221, 23, 0.3)', dark: 'rgba(100, 221, 23, 0.15)' }, 'tint');
 
-  // Use AI instructions hook with the note's type
+  // Use AI instructions hook with the note's type (keep after state/theme hooks)
   const {
     loading: instructionsLoading,
     getInstruction,
     saveInstruction,
   } = useAIInstructions(noteType);
-
-  // Animation values
-  const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>(
-    {}
-  );
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   // Load note data and note type
   useEffect(() => {
@@ -187,7 +210,7 @@ export default function NoteEditor() {
   if (loading || instructionsLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={tintColor} />
         <ThemedText style={styles.loadingText}>Loading note...</ThemedText>
       </View>
     );
@@ -208,7 +231,7 @@ export default function NoteEditor() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 100}
       >
         <ScrollView
-          style={styles.container}
+          style={[styles.container, { backgroundColor }]}
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
         >
@@ -217,9 +240,9 @@ export default function NoteEditor() {
             options={{
               title: noteType || "Edit Note",
               headerStyle: {
-                backgroundColor: "#121212",
+                backgroundColor: backgroundColor,
               },
-              headerTintColor: "#fff",
+              headerTintColor: textColor,
               headerRight: () => (
                 <>
                   {/* Removed save button from header */}
@@ -230,7 +253,7 @@ export default function NoteEditor() {
                       pressed && { opacity: 0.7 },
                     ]}
                   >
-                    <Ionicons name="settings-outline" size={24} color="#fff" />
+                    <Ionicons name="settings-outline" size={24} color={tintColor} />
                   </Pressable>
                 </>
               ),
@@ -240,18 +263,19 @@ export default function NoteEditor() {
           {/* Header with note type and instructions toggle */}
           <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
             <View style={styles.headerRow}>
-              <View style={styles.noteTypeBadge}>
+              <View style={[styles.noteTypeBadge, { backgroundColor: badgeBackground }]}>
                 <ThemedText style={styles.noteTypeText}>{noteType}</ThemedText>
               </View>
 
               <Pressable
                 style={({ pressed }) => [
                   styles.instructionsToggle,
+                  { backgroundColor: instructionToggleBg },
                   pressed && styles.buttonPressed,
                 ]}
                 onPress={() => setShowInstructions(!showInstructions)}
               >
-                <ThemedText style={styles.instructionsToggleText}>
+                <ThemedText style={[styles.instructionsToggleText, { color: tintColor }]}>
                   {showInstructions
                     ? "Hide All Instructions"
                     : "Show All Instructions"}
@@ -259,7 +283,7 @@ export default function NoteEditor() {
                 <Ionicons
                   name={showInstructions ? "chevron-up" : "chevron-down"}
                   size={18}
-                  color="#64dd17"
+                  color={tintColor}
                 />
               </Pressable>
             </View>
@@ -274,6 +298,8 @@ export default function NoteEditor() {
                 key={fieldName}
                 style={[
                   styles.fieldContainer,
+                  { backgroundColor: cardBackground },
+                  { shadowColor },
                   {
                     transform: [
                       {
@@ -291,7 +317,8 @@ export default function NoteEditor() {
                 <View
                   style={[
                     styles.fieldHeaderContainer,
-                    isExpanded && styles.fieldHeaderExpanded,
+                    { backgroundColor: fieldHeaderBg },
+                    isExpanded && { borderBottomWidth: 1, borderBottomColor: expandBorderColor },
                   ]}
                 >
                   <View style={styles.fieldTitleRow}>
@@ -307,11 +334,11 @@ export default function NoteEditor() {
                         onPress={() => updateField(fieldName, "")}
                         style={({ pressed }) => [
                           styles.clearFieldButton,
-                          pressed && styles.clearFieldButtonPressed,
+                          { backgroundColor: pressed ? clearButtonPressedBg : clearButtonBg },
                         ]}
                         hitSlop={10}
                       >
-                        <MaterialIcons name="highlight-off" size={22} color="#e57373" />
+                        <MaterialIcons name="highlight-off" size={22} color={textColor + "CC"} />
                       </Pressable>
                       {/* Expand/collapse icon */}
                       <Pressable
@@ -325,13 +352,13 @@ export default function NoteEditor() {
                         <View
                           style={[
                             styles.expandButtonContainer,
-                            isExpanded && styles.expandButtonActive,
+                            { backgroundColor: isExpanded ? expandActiveBg : expandButtonBg },
                           ]}
                         >
                           <Ionicons
                             name={isExpanded ? "chevron-up" : "chevron-down"}
                             size={20}
-                            color={isExpanded ? "#64dd17" : textColor + "CC"}
+                            color={isExpanded ? tintColor : textColor + "CC"}
                           />
                         </View>
                       </Pressable>
@@ -345,8 +372,7 @@ export default function NoteEditor() {
                     styles.fieldInput,
                     {
                       color: textColor,
-                      backgroundColor:
-                        backgroundColor === "#000" ? "#0a0a0a" : backgroundColor,
+                      backgroundColor: cardBackground,
                       borderColor: borderColor,
                     },
                   ]}
@@ -359,14 +385,14 @@ export default function NoteEditor() {
 
                 {/* AI instruction section */}
                 {isExpanded && (
-                  <View style={styles.instructionContainer}>
+                  <View style={[styles.instructionContainer, { backgroundColor: instructionBackground, borderTopColor: instructionBorderTopColor }]}>
                     <View style={styles.instructionHeaderRow}>
                       <MaterialIcons
                         name="psychology-alt"
                         size={18}
-                        color="#64dd17"
+                        color={tintColor}
                       />
-                      <ThemedText style={styles.instructionLabel}>
+                      <ThemedText style={[styles.instructionLabel, { color: tintColor }]}>
                         AI Template
                       </ThemedText>
                     </View>
@@ -376,9 +402,8 @@ export default function NoteEditor() {
                         styles.instructionInput,
                         {
                           color: textColor,
-                          backgroundColor:
-                            backgroundColor === "#000" ? "#111" : backgroundColor,
-                          borderColor: "#64dd17" + "40",
+                          backgroundColor: cardBackground,
+                          borderColor: instructionInputBorderColor,
                         },
                       ]}
                       multiline
@@ -393,7 +418,7 @@ export default function NoteEditor() {
                         name="information-circle-outline"
                         style={styles.instructionNoteIcon}
                         size={16}
-                        color="#64dd17"
+                        color={tintColor}
                       />
                       <ThemedText style={styles.instructionNote}>
                         This template applies to the &quot;{fieldName}&quot; field
@@ -407,19 +432,17 @@ export default function NoteEditor() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.generateButton,
-                    isGenerating[fieldName] && styles.generateButtonDisabled,
-                    pressed &&
-                      !isGenerating[fieldName] &&
-                      styles.generateButtonPressed,
+                    { backgroundColor: isGenerating[fieldName] ? generateDisabledBg : generateBg },
+                    pressed && !isGenerating[fieldName] && { backgroundColor: generatePressedBg },
                   ]}
                   onPress={() => generateWithAI(fieldName)}
                   disabled={isGenerating[fieldName]}
-                  android_ripple={{ color: "rgba(255,255,255,0.3)" }}
+                  android_ripple={{ color: rippleColor }}
                 >
                   {isGenerating[fieldName] ? (
                     <View style={styles.generatingContainer}>
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                      <ThemedText style={styles.generatingText}>
+                      <ActivityIndicator size="small" color={generateColor} />
+                      <ThemedText style={[styles.generatingText, { color: generateColor }]}>
                         Generating...
                       </ThemedText>
                     </View>
@@ -428,9 +451,12 @@ export default function NoteEditor() {
                       <MaterialIcons
                         name="auto-awesome"
                         size={20}
-                        color="#FFFFFF"
+                        color={generateColor}
                       />
-                      <ThemedText style={styles.generateButtonText}>
+                      <ThemedText style={[
+                        styles.generateButtonText,
+                        { color: generateColor }
+                      ]}>
                         Generate with AI
                       </ThemedText>
                     </View>
@@ -445,11 +471,12 @@ export default function NoteEditor() {
           onPress={saveNote}
           style={({ pressed }) => [
             styles.fabSaveButton,
-            pressed && styles.fabSaveButtonPressed,
+            { backgroundColor: "green", shadowColor },
+            pressed && { backgroundColor: fabPressedBg },
           ]}
           hitSlop={16}
         >
-          <Ionicons name="save-outline" size={28} color="#fff" />
+          <Ionicons name="save-outline" size={28} color={buttonTextOnTint} />
         </Pressable>
       </KeyboardAvoidingView>
       <Toast />
@@ -460,7 +487,7 @@ export default function NoteEditor() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    // backgroundColor moved inline to be theme-aware
   },
   contentContainer: {
     padding: 16,
@@ -482,7 +509,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     marginBottom: 16,
-    color: "#fff",
+    // color moved to ThemedText usage
   },
   headerRow: {
     justifyContent: "space-between",
@@ -490,7 +517,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   noteTypeBadge: {
-    backgroundColor: "#222",
+    // backgroundColor moved inline
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -502,7 +529,6 @@ const styles = StyleSheet.create({
   instructionsToggle: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(100, 221, 23, 0.15)",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -510,15 +536,14 @@ const styles = StyleSheet.create({
   instructionsToggleText: {
     marginRight: 6,
     fontSize: 14,
-    color: "#64dd17",
     fontWeight: "500",
   },
   fieldContainer: {
     marginBottom: 24,
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "#111",
-    shadowColor: "#000",
+    // backgroundColor moved inline to support theme
+    // shadowColor moved to theme-aware variable and applied inline via styles
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.27,
     shadowRadius: 4.65,
@@ -527,14 +552,14 @@ const styles = StyleSheet.create({
   fieldHeaderContainer: {
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
-    backgroundColor: "#1a1a1a",
+    // backgroundColor moved inline
   },
   fieldHeaderPressable: {
     padding: 16,
   },
   fieldHeaderExpanded: {
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(100, 221, 23, 0.3)",
+    // borderBottomColor applied inline to be theme-aware
   },
   fieldTitleRow: {
     flexDirection: "row",
@@ -556,12 +581,12 @@ const styles = StyleSheet.create({
     marginRight: 2,
     padding: 4,
     borderRadius: 16,
-    backgroundColor: "#2d2323",
+    // backgroundColor moved inline to support theme
     justifyContent: "center",
     alignItems: "center",
   },
   clearFieldButtonPressed: {
-    backgroundColor: "#4e2428",
+    // moved inline
   },
   expandButtonContainer: {
     width: 32,
@@ -569,10 +594,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    // backgroundColor moved inline to support theme
   },
   expandButtonActive: {
-    backgroundColor: "rgba(100, 221, 23, 0.15)",
+    // moved inline
   },
   expandButton: {
     // padding: 4,
@@ -588,8 +613,8 @@ const styles = StyleSheet.create({
   instructionContainer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "rgba(100, 221, 23, 0.2)",
-    backgroundColor: "rgba(100, 221, 23, 0.05)",
+    // borderTopColor moved inline
+    // backgroundColor moved inline
   },
   instructionHeaderRow: {
     flexDirection: "row",
@@ -600,7 +625,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
-    color: "#64dd17",
+    // color moved inline
   },
   instructionInput: {
     borderWidth: 1,
@@ -630,7 +655,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   generateButton: {
-    backgroundColor: "#007AFF",
     padding: 16,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
@@ -641,13 +665,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   generateButtonDisabled: {
-    backgroundColor: "rgba(0, 122, 255, 0.5)",
+    // background moved inline
   },
   generateButtonPressed: {
-    backgroundColor: "#0056b3",
+    // background moved inline
   },
   generateButtonText: {
-    color: "white",
     fontWeight: "600",
     marginLeft: 8,
     fontSize: 16,
@@ -658,7 +681,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   generatingText: {
-    color: "white",
     marginLeft: 8,
     fontWeight: "500",
   },
@@ -681,20 +703,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 24,
     bottom: 25,
-    backgroundColor: "#34C759",
+    // backgroundColor moved inline
     borderRadius: 32,
     width: 56,
     height: 56,
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
-    shadowColor: "#000",
+    // shadowColor moved inline
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     zIndex: 100,
   },
   fabSaveButtonPressed: {
-    backgroundColor: "#249944",
+    // background moved inline
   },
 });
