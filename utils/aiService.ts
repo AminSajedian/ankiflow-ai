@@ -85,10 +85,12 @@ export const generateContent = async (
       throw new Error("Empty response from Gemini API");
     }
 
+    // Trim whitespace from generated content to avoid extra spaces/newlines
+    const generatedContent = response.text.trim();
+    
     // Add separator if there's existing content
-    const generatedContent = response.text;
     if (currentFieldValue && currentFieldValue.trim() !== "") {
-      return currentFieldValue + "\n------\n" + generatedContent;
+      return currentFieldValue.trimEnd() + "\n------\n" + generatedContent;
     }
 
     return generatedContent;
