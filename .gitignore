@@ -4,8 +4,9 @@
 node_modules/
 builds/
 
-# Credential files
+# Credential and release files
 credentials/
+release/
 
 # Expo
 .expo/
