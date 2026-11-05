@@ -77,7 +77,7 @@ export default function NoteList() {
 
   if (loading) {
     return (
-      <View style={[styles.centered, { backgroundColor }]}> {/* changed */}
+      <View style={[styles.centered, { backgroundColor }]}>
         <ActivityIndicator size="large" color={tint} />
       </View>
     );
@@ -94,7 +94,7 @@ export default function NoteList() {
   const filteredNotes = filterNotes(notes, searchQuery);
 
   return (
-    <View style={[styles.container]}> {/* changed */}
+    <View style={[styles.container]}>
       {/* Header with deck name and stats */}
       <View style={styles.header}>
         <ThemedText style={styles.headerTitle}>

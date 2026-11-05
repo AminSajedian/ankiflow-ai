@@ -165,7 +165,7 @@ export default function DeckList() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={tint} /> {/* changed: use theme tint */}
+        <ActivityIndicator size="large" color={tint} />
         <ThemedText style={styles.loadingText}>Loading your decks...</ThemedText>
       </ThemedView>
     );
@@ -199,7 +199,7 @@ export default function DeckList() {
                 pressed && { opacity: 0.7 }
               ]}
             >
-              <Ionicons name="settings-outline" size={24} color={textColor} /> {/* changed */}
+              <Ionicons name="settings-outline" size={24} color={textColor} />
             </Pressable>
           ),
         }}
@@ -221,7 +221,7 @@ export default function DeckList() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="cards-outline" size={60} color={iconColor} /> {/* changed */}
+            <MaterialCommunityIcons name="cards-outline" size={60} color={iconColor} />
             <ThemedText style={styles.emptyText}>No decks found</ThemedText>
             <ThemedText style={styles.emptySubText}>Pull down to refresh</ThemedText>
           </View>
