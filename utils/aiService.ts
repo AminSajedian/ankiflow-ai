@@ -6,16 +6,25 @@ import Toast from "react-native-toast-message";
 // AI Api Key Identifier
 const AI_API_KEY_IDENTIFIER = "gemini_api_key";
 
-// Tried in order. "-latest" aliases keep the app working when Google retires a
-// model version (gemini-2.0-flash-001 was shut down June 2026); the later entries
-// are used when a model is overloaded (HTTP 503), rate limited (HTTP 429) or
-// doesn't answer within GEMINI_TIMEOUT_MS.
-const GEMINI_MODELS = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-flash-lite-latest"];
+// Tried in order: the next model is used when one is retired (HTTP 404, as
+// gemini-2.0-flash-001 was in June 2026), overloaded (HTTP 503), rate limited
+// (HTTP 429) or doesn't answer within GEMINI_TIMEOUT_MS. The "-latest" aliases
+// keep the app working after the pinned model is retired.
+const GEMINI_MODELS = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-flash-lite-latest"];
 const GEMINI_TIMEOUT_MS = 25000;
 
 const isRetryableError = (error: unknown) =>
   error instanceof Error &&
-  (error.name === "AbortError" || /\b(503|429)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|abort/i.test(error.message));
+  (error.name === "AbortError" || /\b(404|503|429)\b|NOT_FOUND|UNAVAILABLE|RESOURCE_EXHAUSTED|abort/i.test(error.message));
+
+// Flashcards need short answers fast: no thinking, a hard cap on length, and
+// plain text because Anki shows Markdown symbols as-is.
+const FLASHCARD_SYSTEM_INSTRUCTION = `You write the content of a single field of an Anki flashcard.
+Rules:
+- Reply with the field content only: no preamble, no options, no explanations, no follow-up questions.
+- Plain text only: no Markdown, no HTML, no headings, no bullet symbols, no surrounding quotes.
+- Be as short as possible: one line, ideally under 15 words, unless the field instruction asks for more.
+- If a field instruction is given, follow it exactly; it overrides the length rule.`;
 
 const generateWithFallback = async (ai: GoogleGenAI, contents: string) => {
   let lastError: unknown;
@@ -23,7 +32,16 @@ const generateWithFallback = async (ai: GoogleGenAI, contents: string) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
     try {
-      return await ai.models.generateContent({ model, contents, config: { abortSignal: controller.signal } });
+      return await ai.models.generateContent({
+        model,
+        contents,
+        config: {
+          abortSignal: controller.signal,
+          systemInstruction: FLASHCARD_SYSTEM_INSTRUCTION,
+          thinkingConfig: { thinkingBudget: 0 },
+          maxOutputTokens: 300,
+        },
+      });
     } catch (error) {
       if (!isRetryableError(error)) throw error;
       console.warn(`Gemini model ${model} is unavailable, trying the next one`);
@@ -92,15 +110,11 @@ export const generateContent = async (
     });
 
     // Create prompt that includes the field description and instruction
-    const prompt = `
-      You are an AI assistant helping to create content for Anki flashcard.
-      Generate "${targetFieldName}" for "${firstFieldValue}" 
-      ${
-        fieldInstruction
-          ? `with the following instruction: ${fieldInstruction}`
-          : ""
-      }
-    `;
+    const prompt = [
+      `Card: ${firstFieldValue}`,
+      `Field to write: ${targetFieldName}`,
+      fieldInstruction ? `Field instruction: ${fieldInstruction}` : "",
+    ].filter(Boolean).join("\n");
 
     console.log("🚀 ~ generateContent ~ prompt:", prompt);
 
