@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="expo.modules.ankidroid" >
+
+    <uses-sdk android:minSdkVersion="24" />
+    <!-- Runtime permission defined by AnkiDroid for its FlashCards ContentProvider -->
+    <uses-permission android:name="com.ichi2.anki.permission.READ_WRITE_DATABASE" />
+
+    <!-- Android 11+ package visibility: lets us see AnkiDroid and its provider -->
+    <queries>
+        <package android:name="com.ichi2.anki" />
+
+        <provider android:authorities="com.ichi2.anki.flashcards" />
+    </queries>
+
+</manifest>

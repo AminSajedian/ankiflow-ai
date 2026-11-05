@@ -1,0 +1,30 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:1:1-10:12
+INJECTED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:1:1-10:12
+	package
+		INJECTED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:1:11-69
+uses-permission#com.ichi2.anki.permission.READ_WRITE_DATABASE
+ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:3:3-83
+	android:name
+		ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:3:20-80
+queries
+ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:6:3-9:13
+package#com.ichi2.anki
+ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:7:5-46
+	android:name
+		ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:7:14-43
+provider
+ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:8:5-65
+	android:authorities
+		ADDED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:8:15-62
+uses-sdk
+INJECTED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml
+INJECTED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml

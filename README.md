@@ -56,18 +56,17 @@ AnkiFlow AI follows a modular architecture with these key areas:
 
 ## Prerequisites
 
-Before using AnkiFlow AI, make sure the following apps are installed and running on your Android device:
+Before using AnkiFlow AI, make sure you have:
 
-1. **[AnkiDroid](https://play.google.com/store/apps/details?id=com.ichi2.anki)** — the Android Anki client that stores your decks and cards.
-2. **[AnkiConnect Android](https://github.com/KamWithK/AnkiconnectAndroid/releases/latest)** — exposes the AnkiConnect API on Android so AnkiFlow AI can communicate with AnkiDroid.
-   - Download the latest `.apk` from the [Releases page](https://github.com/KamWithK/AnkiconnectAndroid/releases/latest) or install via the [IzzyOnDroid F-Droid repo](https://apt.izzysoft.de/fdroid/index/apk/com.kamwithk.ankiconnectandroid).
-   - Open AnkiConnect Android, accept the permissions, and tap **Start Service** before launching AnkiFlow AI.
-3. A **Google Gemini API key** — get one for free at [aistudio.google.com](https://aistudio.google.com).
+1. **[AnkiDroid](https://play.google.com/store/apps/details?id=com.ichi2.anki)** — the Android Anki client that stores your decks and cards. Open it once so it creates your collection.
+2. A **Google Gemini API key** — get one for free at [aistudio.google.com](https://aistudio.google.com).
+
+AnkiFlow AI talks to AnkiDroid directly through AnkiDroid's official API, so no extra bridge app is needed. The first time it opens, Android asks you to allow access to AnkiDroid.
 
 ## Getting Started
 
-1. Install AnkiDroid and AnkiConnect Android (see Prerequisites above)
-2. Install AnkiFlow AI from the app store or build from source
+1. Install AnkiDroid and open it once (see Prerequisites above)
+2. Install AnkiFlow AI from the app store or build from source, then tap **Allow** when asked for access to AnkiDroid
 3. Open AnkiFlow AI → **Settings** → enter your Gemini API key
 4. Browse your AnkiDroid decks and use AI to enhance your flashcards
 5. Track your progress and adjust study settings as needed

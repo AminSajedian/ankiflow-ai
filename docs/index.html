@@ -136,8 +136,8 @@
 
   <h2>Requirements</h2>
   <div class="prereq-box">
-    AnkiFlow AI communicates with <strong>AnkiDroid</strong> via <strong>AnkiConnect Android</strong>.
-    Both apps must be installed and AnkiConnect Android must have its service running before you launch AnkiFlow AI.
+    AnkiFlow AI works with <strong>AnkiDroid</strong> directly through AnkiDroid's official API.
+    No extra bridge app is needed — just allow access to AnkiDroid when AnkiFlow AI asks.
   </div>
 
   <h2>Setup Guide</h2>
@@ -145,22 +145,7 @@
     <li>
       <div>
         <strong>Install AnkiDroid</strong>
-        Download <a href="https://play.google.com/store/apps/details?id=com.ichi2.anki" target="_blank" rel="noopener">AnkiDroid from Google Play</a> and set up your decks.
-      </div>
-    </li>
-    <li>
-      <div>
-        <strong>Install AnkiConnect Android</strong>
-        Download the latest <code>.apk</code> from the
-        <a href="https://github.com/KamWithK/AnkiconnectAndroid/releases/latest" target="_blank" rel="noopener">GitHub Releases page</a>
-        or via the
-        <a href="https://apt.izzysoft.de/fdroid/index/apk/com.kamwithk.ankiconnectandroid" target="_blank" rel="noopener">IzzyOnDroid F-Droid repo</a>.
-      </div>
-    </li>
-    <li>
-      <div>
-        <strong>Start AnkiConnect Android service</strong>
-        Open the app, accept the permissions prompt, and tap <em>Start Service</em>. Keep it running in the background.
+        Download <a href="https://play.google.com/store/apps/details?id=com.ichi2.anki" target="_blank" rel="noopener">AnkiDroid from Google Play</a>, open it once, and set up your decks.
       </div>
     </li>
     <li>
@@ -172,7 +157,7 @@
     <li>
       <div>
         <strong>Install AnkiFlow AI &amp; enter your key</strong>
-        Open AnkiFlow AI → <em>Settings</em> → paste your Gemini API key → Save.
+        Open AnkiFlow AI, tap <em>Allow</em> when asked for access to AnkiDroid, then go to <em>Settings</em> → paste your Gemini API key → Save.
       </div>
     </li>
     <li>

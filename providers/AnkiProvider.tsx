@@ -1,8 +1,10 @@
 // providers/AnkiProvider.tsx
+import AnkiDroid from "@/modules/ankidroid";
 import { logger } from "@/utils/logger";
 import { createContext, useContext, useRef } from "react";
 import Toast from 'react-native-toast-message';
 
+// Used only where the native AnkiDroid module is unavailable (e.g. web with desktop Anki)
 const ANKICONNECT_URL = 'http://127.0.0.1:8765';
 
 interface AnkiNoteField {
@@ -67,8 +69,67 @@ export function useAnkiContext() {
 
 export function AnkiProvider({ children }: { children: React.ReactNode }) {
   const isInitialConnection = useRef(true);
+  const hasAnkiDroidPermission = useRef(false);
+
+  async function ensureAnkiDroidPermission() {
+    if (hasAnkiDroidPermission.current) return;
+    if (!AnkiDroid!.isInstalled()) {
+      throw new Error('AnkiDroid is not installed. Install it from Google Play and open it once.');
+    }
+    let permission = await AnkiDroid!.getPermissionsAsync();
+    if (!permission.granted && permission.canAskAgain) {
+      permission = await AnkiDroid!.requestPermissionsAsync();
+    }
+    if (!permission.granted) {
+      throw new Error('Access to AnkiDroid was denied. Allow it in Settings › Apps › AnkiFlow AI › Permissions.');
+    }
+    hasAnkiDroidPermission.current = true;
+  }
+
+  // Maps the AnkiConnect-style actions used below onto AnkiDroid's own API
+  async function ankiDroidRequest(action: string, params: any): Promise<any> {
+    await ensureAnkiDroidPermission();
+    switch (action) {
+      case 'deckNames':
+        return AnkiDroid!.deckNames();
+      case 'findNotes':
+        return AnkiDroid!.findNotes(params.query);
+      case 'notesInfo':
+        return AnkiDroid!.notesInfo(params.notes);
+      case 'updateNoteFields':
+        return AnkiDroid!.updateNoteFields(params.note.id, params.note.fields);
+      case 'modelNamesAndIds':
+        return AnkiDroid!.modelNamesAndIds();
+      case 'modelFieldNames':
+        return AnkiDroid!.modelFieldNames(params.modelName);
+      default:
+        throw new Error(`Unsupported AnkiDroid action: ${action}`);
+    }
+  }
 
   async function ankiRequest<T = any>(action: string, params: any = {}): Promise<T | undefined> {
+    if (AnkiDroid) {
+      try {
+        const result = await ankiDroidRequest(action, params);
+        if (isInitialConnection.current) {
+          logger.info('Successfully connected to AnkiDroid');
+          isInitialConnection.current = false;
+        }
+        return result;
+      } catch (e: any) {
+        Toast.show({
+          type: 'error',
+          text1: 'AnkiDroid Error',
+          text2: e.message,
+          autoHide: false,
+          position: 'bottom',
+          onPress: () => Toast.hide(),
+        });
+        logger.error(`AnkiDroid failed: ${action}`, e.message);
+        return undefined;
+      }
+    }
+
     try {
       // Remove network check for local AnkiConnect actions
 
@@ -144,43 +205,8 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
   }
 
   const getNoteType = async (noteId: number): Promise<string> => {
-    try {
-      const response = await fetch(ANKICONNECT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'notesInfo',
-          version: 6,
-          params: {
-            notes: [noteId]
-          }
-        }),
-      });
-      
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
-      if (!data.result || data.result.length === 0) {
-        throw new Error('Note not found');
-      }
-      
-      // Return the modelName from the note info
-      return data.result[0].modelName;
-    } catch (error) {
-      console.error('Error fetching note type:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'AnkiConnect Error',
-        text2: 'Failed to fetch note type from Anki',
-        autoHide: false,
-        position: 'bottom',
-      });
-      return '';
-    }
+    const result = await ankiRequest<AnkiNoteInfo[]>("notesInfo", { notes: [noteId] });
+    return result?.[0]?.modelName ?? '';
   };
   
   const updateNoteFields = async (noteId: number, fields: Record<string, FieldWithDescription>): Promise<boolean> => {
@@ -198,83 +224,19 @@ export function AnkiProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getNoteTypeFields = async (modelName: string): Promise<string[]> => {
-    try {
-      const response = await fetch(ANKICONNECT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'modelFieldNames',
-          version: 6,
-          params: {
-            modelName: modelName
-          }
-        }),
-      });
-      
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
-      return data.result;
-    } catch (error) {
-      console.error('Error fetching model fields:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'AnkiConnect Error',
-        text2: 'Failed to fetch note type fields from Anki',
-        autoHide: false,
-        position: 'bottom',
-      });
-      return [];
-    }
+    const result = await ankiRequest<string[]>("modelFieldNames", { modelName });
+    return result ?? [];
   };
-  
+
   const getAllNoteTypes = async (): Promise<NoteType[]> => {
-    try {
-      // First get note type names and ids
-      const namesResponse = await fetch(ANKICONNECT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'modelNamesAndIds',
-          version: 6
-        }),
-      });
-      
-      const namesData = await namesResponse.json();
-      if (namesData.error) {
-        throw new Error(namesData.error);
-      }
-      
-      // Then get fields for each note type
-      const noteTypes: NoteType[] = [];
-      
-      for (const [name, id] of Object.entries(namesData.result)) {
-        const fields = await getNoteTypeFields(name);
-        noteTypes.push({
-          id: id as number,
-          name,
-          fields
-        });
-      }
-      
-      return noteTypes;
-    } catch (error) {
-      console.error('Error fetching note types:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'AnkiConnect Error',
-        text2: 'Failed to fetch note types from Anki',
-        autoHide: false,
-        position: 'bottom',
-      });
-      return [];
+    const namesAndIds = await ankiRequest<Record<string, number>>("modelNamesAndIds");
+    if (!namesAndIds) return [];
+
+    const noteTypes: NoteType[] = [];
+    for (const [name, id] of Object.entries(namesAndIds)) {
+      noteTypes.push({ id, name, fields: await getNoteTypeFields(name) });
     }
+    return noteTypes;
   };
   
   const value: AnkiContextValue = {

@@ -1,0 +1,23 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="expo.modules.ankidroid" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6    <!-- Runtime permission defined by AnkiDroid for its FlashCards ContentProvider -->
+7    <uses-permission android:name="com.ichi2.anki.permission.READ_WRITE_DATABASE" />
+7-->/Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:3:3-83
+7-->/Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:3:20-80
+8
+9    <!-- Android 11+ package visibility: lets us see AnkiDroid and its provider -->
+10    <queries>
+10-->/Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:6:3-9:13
+11        <package android:name="com.ichi2.anki" />
+11-->/Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:7:5-46
+11-->/Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:7:14-43
+12
+13        <provider android:authorities="com.ichi2.anki.flashcards" />
+13-->/Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:8:5-65
+13-->/Users/amin/Documents/personal/codebases/ankiflow-ai/modules/ankidroid/android/src/main/AndroidManifest.xml:8:15-62
+14    </queries>
+15
+16</manifest>
