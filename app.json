@@ -15,7 +15,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundImage": "./assets/images/adaptive-icon-background.png",
+        "backgroundColor": "#4F46E5"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.amincodeland.ankiflowai",
