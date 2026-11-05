@@ -8,21 +8,30 @@ const AI_API_KEY_IDENTIFIER = "gemini_api_key";
 
 // Tried in order. "-latest" aliases keep the app working when Google retires a
 // model version (gemini-2.0-flash-001 was shut down June 2026); the later entries
-// are used when a model is overloaded (HTTP 503) or rate limited (HTTP 429).
+// are used when a model is overloaded (HTTP 503), rate limited (HTTP 429) or
+// doesn't answer within GEMINI_TIMEOUT_MS.
 const GEMINI_MODELS = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-flash-lite-latest"];
+const GEMINI_TIMEOUT_MS = 25000;
 
 const isRetryableError = (error: unknown) =>
-  error instanceof Error && /\b(503|429)\b|UNAVAILABLE|RESOURCE_EXHAUSTED/.test(error.message);
+  error instanceof Error &&
+  (error.name === "AbortError" || /\b(503|429)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|abort/i.test(error.message));
 
 const generateWithFallback = async (ai: GoogleGenAI, contents: string) => {
   let lastError: unknown;
   for (const model of GEMINI_MODELS) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
     try {
-      return await ai.models.generateContent({ model, contents });
+      return await ai.models.generateContent({ model, contents, config: { abortSignal: controller.signal } });
     } catch (error) {
       if (!isRetryableError(error)) throw error;
       console.warn(`Gemini model ${model} is unavailable, trying the next one`);
-      lastError = error;
+      lastError = controller.signal.aborted
+        ? new Error("Gemini is taking too long to respond. Please try again.")
+        : error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
   throw lastError;
