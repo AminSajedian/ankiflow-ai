@@ -6,6 +6,28 @@ import Toast from "react-native-toast-message";
 // AI Api Key Identifier
 const AI_API_KEY_IDENTIFIER = "gemini_api_key";
 
+// Tried in order. "-latest" aliases keep the app working when Google retires a
+// model version (gemini-2.0-flash-001 was shut down June 2026); the later entries
+// are used when a model is overloaded (HTTP 503) or rate limited (HTTP 429).
+const GEMINI_MODELS = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-flash-lite-latest"];
+
+const isRetryableError = (error: unknown) =>
+  error instanceof Error && /\b(503|429)\b|UNAVAILABLE|RESOURCE_EXHAUSTED/.test(error.message);
+
+const generateWithFallback = async (ai: GoogleGenAI, contents: string) => {
+  let lastError: unknown;
+  for (const model of GEMINI_MODELS) {
+    try {
+      return await ai.models.generateContent({ model, contents });
+    } catch (error) {
+      if (!isRetryableError(error)) throw error;
+      console.warn(`Gemini model ${model} is unavailable, trying the next one`);
+      lastError = error;
+    }
+  }
+  throw lastError;
+};
+
 // Get API key from AsyncStorage only
 export const getApiKey = async (): Promise<string> => {
   try {
@@ -74,10 +96,7 @@ export const generateContent = async (
     console.log("🚀 ~ generateContent ~ prompt:", prompt);
 
     // Call the Gemini API
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-001",
-      contents: prompt,
-    });
+    const response = await generateWithFallback(ai, prompt);
 
     console.log("🚀 ~ generateContent ~ response:", response.text);
 
@@ -135,10 +154,7 @@ export const generateFieldContent = async (
       Your response must be in English.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-001",
-      contents: enhancedPrompt,
-    });
+    const response = await generateWithFallback(ai, enhancedPrompt);
 
     console.log("🚀 ~ generateFieldContent ~ response:", response.text);
     return response.text || null;
